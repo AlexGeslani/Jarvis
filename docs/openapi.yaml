@@ -1,0 +1,373 @@
+openapi: 3.1.0
+info:
+  title: Jarvis Local Voice API
+  version: 0.1.8
+  description: |
+    Versioned LAN-only contract shared by the Jarvis browser and Zepp OS clients.
+    The service is an orchestration boundary for user-operated speech and local
+    reasoning services; it does not expose raw workers and does not persist
+    transcript or audio data.
+servers:
+  - url: https://jarvis.example/api/v1
+    description: Example private LAN origin
+security: []
+tags:
+  - name: health
+  - name: sessions
+  - name: turns
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Return process liveness
+      responses:
+        "200":
+          description: API process is ready to accept requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /sessions:
+    post:
+      operationId: createSession
+      tags: [sessions]
+      summary: Create a short-lived in-memory client session
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201":
+          description: Session created or idempotently replayed
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+  /turns:
+    post:
+      operationId: createTurn
+      tags: [turns]
+      summary: Run one text or voice turn
+      description: |
+        Audio is normalized to mono 16 kHz PCM WAV before STT. High-risk intents are
+        rejected before the reasoning backend is called. Browser clients use multipart
+        WebM/Opus; the watch Side Service uses a JSON base64 OPUS input.
+      security:
+        - SessionId: []
+          CsrfToken: []
+          IdempotencyKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TurnRequest"
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MultipartTurnRequest"
+      responses:
+        "201":
+          description: Completed turn; audio remains available until its bounded TTL expires
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "415": { $ref: "#/components/responses/UnsupportedMedia" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "502": { $ref: "#/components/responses/UpstreamFailure" }
+  /turns/{turn_id}/cancel:
+    post:
+      operationId: cancelTurn
+      tags: [turns]
+      summary: Cancel an active turn owned by the session
+      security:
+        - SessionId: []
+          CsrfToken: []
+          IdempotencyKey: []
+      parameters:
+        - $ref: "#/components/parameters/TurnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelRequest"
+      responses:
+        "202":
+          description: Cancellation accepted or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /turns/{turn_id}/audio:
+    get:
+      operationId: getTurnAudio
+      tags: [turns]
+      summary: Retrieve ephemeral synthesized audio owned by the session
+      security:
+        - SessionId: []
+          CsrfToken: []
+      parameters:
+        - $ref: "#/components/parameters/TurnId"
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [wav, mp3]
+      responses:
+        "200":
+          description: Synthesized response audio
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            audio/wav:
+              schema: { type: string, format: binary }
+            audio/mpeg:
+              schema: { type: string, format: binary }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+components:
+  securitySchemes:
+    SessionId:
+      type: apiKey
+      in: header
+      name: X-Jarvis-Session
+      description: Opaque session identifier returned by POST /sessions.
+    CsrfToken:
+      type: apiKey
+      in: header
+      name: X-Jarvis-CSRF
+      description: Opaque session-bound mutation/read token returned by POST /sessions.
+    IdempotencyKey:
+      type: apiKey
+      in: header
+      name: Idempotency-Key
+      description: Unique 8-128 character request key used for bounded replay protection.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$"
+    TurnId:
+      name: turn_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/TurnId"
+  responses:
+    BadRequest:
+      description: Malformed request or idempotency key
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    Forbidden:
+      description: Origin, session, CSRF token, or ownership denied
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    NotFound:
+      description: Turn or audio is absent or expired
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    Conflict:
+      description: Turn state, active-turn limit, or idempotency fingerprint conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    TooLarge:
+      description: Text, body, audio, or synthesized result exceeded a configured bound
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    UnsupportedMedia:
+      description: Unsupported request or audio media type
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    Unprocessable:
+      description: Invalid audio or a prohibited high-risk intent
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    RateLimited:
+      description: Session turn rate exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+    UpstreamFailure:
+      description: Voice or conversation backend failed without exposing upstream details
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, api_version]
+      properties:
+        status: { type: string, const: ready }
+        api_version: { type: string, const: v1 }
+    Session:
+      type: object
+      additionalProperties: false
+      required: [session_id, csrf_token, expires_in_seconds]
+      properties:
+        session_id: { type: string, format: uuid }
+        csrf_token:
+          type: string
+          minLength: 32
+          maxLength: 128
+        expires_in_seconds:
+          type: integer
+          minimum: 1
+          maximum: 86400
+    TurnId:
+      type: string
+      minLength: 8
+      maxLength: 80
+      pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{7,79}$"
+    TextInput:
+      type: object
+      additionalProperties: false
+      required: [type, text]
+      properties:
+        type: { type: string, const: text }
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    AudioInput:
+      type: object
+      additionalProperties: false
+      required: [type, audio_format, audio_base64]
+      properties:
+        type: { type: string, const: audio }
+        audio_format:
+          type: string
+          enum: [opus, webm, wav]
+        audio_base64:
+          type: string
+          contentEncoding: base64
+          minLength: 4
+    TurnRequest:
+      type: object
+      additionalProperties: false
+      required: [session_id, turn_id, input, response_format]
+      properties:
+        session_id: { type: string, format: uuid }
+        turn_id: { $ref: "#/components/schemas/TurnId" }
+        input:
+          oneOf:
+            - $ref: "#/components/schemas/TextInput"
+            - $ref: "#/components/schemas/AudioInput"
+          discriminator:
+            propertyName: type
+            mapping:
+              text: "#/components/schemas/TextInput"
+              audio: "#/components/schemas/AudioInput"
+        response_format:
+          type: string
+          enum: [wav, mp3]
+    MultipartTurnRequest:
+      type: object
+      additionalProperties: false
+      required: [session_id, turn_id, audio, response_format]
+      properties:
+        session_id: { type: string, format: uuid }
+        turn_id: { $ref: "#/components/schemas/TurnId" }
+        response_format:
+          type: string
+          enum: [wav, mp3]
+        audio:
+          type: string
+          format: binary
+          description: WebM/Opus, Ogg/Opus, raw OPUS, or WAV within configured byte and duration bounds.
+    AudioReference:
+      type: object
+      additionalProperties: false
+      required: [url, format, content_type]
+      properties:
+        url:
+          type: string
+          pattern: "^/api/v1/turns/[A-Za-z0-9._:-]+/audio\\?format=(wav|mp3)$"
+        format:
+          type: string
+          enum: [wav, mp3]
+        content_type:
+          type: string
+          enum: [audio/wav, audio/mpeg]
+    TurnResponse:
+      type: object
+      additionalProperties: false
+      required: [turn_id, session_id, state, transcript, response_text, audio]
+      properties:
+        turn_id: { $ref: "#/components/schemas/TurnId" }
+        session_id: { type: string, format: uuid }
+        state: { type: string, const: complete }
+        transcript:
+          type: string
+          maxLength: 2000
+        response_text:
+          type: string
+          maxLength: 2000
+        audio: { $ref: "#/components/schemas/AudioReference" }
+    CancelRequest:
+      type: object
+      additionalProperties: false
+      required: [session_id]
+      properties:
+        session_id: { type: string, format: uuid }
+    CancelResponse:
+      type: object
+      additionalProperties: false
+      required: [turn_id, state]
+      properties:
+        turn_id: { $ref: "#/components/schemas/TurnId" }
+        state: { type: string, const: cancelled }
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              pattern: "^[a-z0-9_]+$"
+            message:
+              type: string
+              maxLength: 240
+            request_id:
+              type: string
+              minLength: 8
+              maxLength: 64

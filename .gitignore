@@ -1,0 +1,35 @@
+.DS_Store
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!watch/.env.local.example
+watch/.env.local
+watch/app-side/api-config.js
+
+# Language and dependency output
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+node_modules/
+coverage/
+
+# Zepp preview and package artifacts
+*-qr.png
+watch/review/
+dist/*.zab
+watch/dist/*.zab
+
+# Runtime captures and private session material
+recordings/
+audio-captures/
+captures/audio/
+transcripts/
+sessions/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

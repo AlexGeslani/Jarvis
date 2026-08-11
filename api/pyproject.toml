@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-api"
+version = "0.1.8"
+description = "Local-first Jarvis voice API"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "aiohttp==3.12.15",
+]
+
+[project.optional-dependencies]
+test = [
+  "openapi-spec-validator==0.7.2",
+  "pytest==8.4.1",
+  "pytest-asyncio==1.1.0",
+  "PyYAML==6.0.2",
+]
+
+[project.scripts]
+jarvis-api = "jarvis_api.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra"

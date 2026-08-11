@@ -1,0 +1,16 @@
+{
+  "name": "jarvis-monorepo",
+  "private": true,
+  "version": "0.1.8",
+  "type": "module",
+  "workspaces": ["watch"],
+  "scripts": {
+    "test": "npm run test:js",
+    "test:js": "node --test tests/js/*.test.js",
+    "test:api": "uv run --project api --python 3.11 --extra test pytest -c api/pyproject.toml api/tests",
+    "build:watch": "npm run build --workspace jarvis-watch",
+    "validate:publication": "uv run --project api --python 3.11 --extra test python scripts/validate-publication.py",
+    "public-safety": "python3.11 scripts/public-safety-check.py",
+    "verify": "npm test && npm run test:api && npm run validate:publication && npm run public-safety"
+  }
+}

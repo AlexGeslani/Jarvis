@@ -1,0 +1,82 @@
+name: jarvis
+
+services:
+  jarvis-api:
+    build:
+      context: ./api
+    image: jarvis-api:local
+    restart: unless-stopped
+    init: true
+    user: "65532:65532"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=0700,uid=65532,gid=65532
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      JARVIS_STT_URL: ${JARVIS_STT_URL:?Set JARVIS_STT_URL}
+      JARVIS_TTS_URL: ${JARVIS_TTS_URL:?Set JARVIS_TTS_URL}
+      JARVIS_REASONING_URL: ${JARVIS_REASONING_URL:?Set JARVIS_REASONING_URL}
+      JARVIS_REASONING_MODEL: ${JARVIS_REASONING_MODEL:?Set JARVIS_REASONING_MODEL}
+      JARVIS_REASONING_API_KEY_FILE: ${JARVIS_REASONING_API_KEY_FILE:-}
+      JARVIS_PIPER_VOICE: ${JARVIS_PIPER_VOICE:-piper:en_US-danny-low}
+      JARVIS_ALLOWED_ORIGIN: ${JARVIS_ALLOWED_ORIGIN:?Set JARVIS_ALLOWED_ORIGIN}
+      JARVIS_PORT: "8080"
+      JARVIS_MAX_PAYLOAD_BYTES: ${JARVIS_MAX_PAYLOAD_BYTES:-2000000}
+      JARVIS_MAX_AUDIO_BYTES: ${JARVIS_MAX_AUDIO_BYTES:-1500000}
+      JARVIS_MAX_AUDIO_SECONDS: ${JARVIS_MAX_AUDIO_SECONDS:-15}
+      JARVIS_MAX_CONCURRENT_TURNS: ${JARVIS_MAX_CONCURRENT_TURNS:-2}
+      JARVIS_RATE_LIMIT_REQUESTS: ${JARVIS_RATE_LIMIT_REQUESTS:-12}
+      JARVIS_RATE_LIMIT_WINDOW_SECONDS: ${JARVIS_RATE_LIMIT_WINDOW_SECONDS:-60}
+      JARVIS_SESSION_TTL_SECONDS: ${JARVIS_SESSION_TTL_SECONDS:-1800}
+      JARVIS_TURN_TTL_SECONDS: ${JARVIS_TURN_TTL_SECONDS:-600}
+      JARVIS_MAX_SESSIONS: ${JARVIS_MAX_SESSIONS:-100}
+      JARVIS_MAX_TURNS: ${JARVIS_MAX_TURNS:-100}
+      JARVIS_MAX_AUDIO_STORE_BYTES: ${JARVIS_MAX_AUDIO_STORE_BYTES:-32000000}
+      JARVIS_UPSTREAM_TIMEOUT_SECONDS: ${JARVIS_UPSTREAM_TIMEOUT_SECONDS:-30}
+      JARVIS_TEMP_ROOT: /tmp/jarvis
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/v1/health', timeout=2).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - jarvis
+
+  jarvis-web:
+    build:
+      context: ./web
+    image: jarvis-web:local
+    restart: unless-stopped
+    init: true
+    user: "101:101"
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m,mode=0700,uid=101,gid=101
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      jarvis-api:
+        condition: service_healthy
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - jarvis
+
+networks:
+  jarvis:
+    external: ${JARVIS_NETWORK_EXTERNAL:-false}
+    name: ${JARVIS_NETWORK_NAME:-jarvis}
