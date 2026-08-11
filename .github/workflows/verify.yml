@@ -1,0 +1,62 @@
+name: Verify
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '20'
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install audio system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg libopus0
+
+      - name: Install pinned toolchains and dependencies
+        run: |
+          python -m pip install uv==0.11.28
+          npm ci
+          uv sync --project api --python 3.11 --extra test --locked
+
+      - name: Node and watch tests
+        run: npm test
+
+      - name: Python API tests
+        run: uv run --project api --no-sync pytest -c api/pyproject.toml api/tests
+
+      - name: Validate Compose configuration
+        env:
+          JARVIS_STT_URL: http://host.docker.internal:8081/v1/audio/transcriptions
+          JARVIS_TTS_URL: http://host.docker.internal:8081/v1/audio/speech
+          JARVIS_REASONING_URL: http://host.docker.internal:8082/v1
+          JARVIS_REASONING_MODEL: example-model
+          JARVIS_PIPER_VOICE: piper:en_US-danny-low
+          JARVIS_ALLOWED_ORIGIN: https://jarvis.example
+        run: docker compose config
+
+      - name: Validate OpenAPI, links, assets, and XML
+        run: npm run validate:publication
+
+      - name: Scan publication candidate
+        run: npm run public-safety
+
+      - name: Check patch hygiene
+        run: git diff --check

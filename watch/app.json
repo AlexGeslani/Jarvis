@@ -1,0 +1,29 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 2026081001,
+    "appName": "Jarvis",
+    "appType": "app",
+    "version": { "code": 9, "name": "0.1.8" },
+    "vender": "Alphatrion",
+    "description": "A private LAN voice client for Amazfit Active Max.",
+    "icon": "images/app-icon.png"
+  },
+  "permissions": ["device:os.mic"],
+  "runtime": {
+    "apiVersion": { "compatible": "4.2", "target": "4.2", "minVersion": "4.2" }
+  },
+  "targets": {
+    "genevaw": {
+      "module": {
+        "page": { "pages": ["page/genevaw/index"] },
+        "app-side": { "path": "app-side/index" }
+      },
+      "platforms": [{ "st": "r" }],
+      "designWidth": 480
+    }
+  },
+  "i18n": { "en-US": { "name": "Jarvis" } },
+  "defaultLanguage": "en-US",
+  "debug": true
+}

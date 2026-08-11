@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#030711">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; media-src 'self' blob:; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Jarvis</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="experience" aria-labelledby="jarvis-title">
+    <canvas id="presence" aria-label="Jarvis presence visualization: idle"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="scanline" aria-hidden="true"></div>
+
+    <header class="identity">
+      <p class="eyebrow">PRIVATE SYSTEM · LOCAL LINK</p>
+      <h1 id="jarvis-title">JARVIS</h1>
+      <p id="status" class="status" role="status" aria-live="polite">Establishing secure local session</p>
+    </header>
+
+    <section class="presence-label" aria-hidden="true">
+      <span class="coordinate">JARVIS // 01</span>
+      <span id="state-label" class="state-label">STANDBY</span>
+      <span class="coordinate">VOICE CORE</span>
+    </section>
+
+    <section class="conversation" aria-labelledby="transcript-title">
+      <div class="conversation-heading">
+        <h2 id="transcript-title">Conversation</h2>
+        <span>EPHEMERAL</span>
+      </div>
+      <ol id="transcript" class="transcript" aria-live="polite" aria-label="Conversation transcript">
+        <li class="system-line">Ready when you are.</li>
+      </ol>
+    </section>
+
+    <section class="command" aria-label="Talk to Jarvis">
+      <div class="voice-controls">
+        <button id="dialogue" class="dialogue" type="button" aria-pressed="false" aria-describedby="dialogue-hint">
+          <span class="dialogue-dot" aria-hidden="true"></span>
+          <span id="dialogue-label">Open dialogue</span>
+        </button>
+        <button id="talk" class="talk" type="button" aria-describedby="talk-hint">
+          <span class="talk-mark" aria-hidden="true"></span>
+          <span id="talk-label">Hold to talk</span>
+        </button>
+      </div>
+      <span id="dialogue-hint" class="visually-hidden">Turn on local voice activity detection for hands-free conversation. Microphone audio is sent only when speech is detected.</span>
+      <span id="talk-hint" class="visually-hidden">Press and hold, or hold Space or Enter, while speaking.</span>
+
+      <form id="text-form" class="text-form" autocomplete="off">
+        <label class="visually-hidden" for="text-input">Message Jarvis</label>
+        <input id="text-input" name="message" type="text" maxlength="2000" placeholder="Or type a request…" enterkeyhint="send" required>
+        <button id="send" type="submit" aria-label="Send request">SEND</button>
+      </form>
+
+      <button id="cancel" class="cancel" type="button" disabled>Cancel active turn</button>
+    </section>
+
+    <footer class="privacy">
+      <span>LAN ONLY</span>
+      <span>NO RETENTION</span>
+      <span id="connection">CONNECTING</span>
+    </footer>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

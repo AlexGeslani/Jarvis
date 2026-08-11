@@ -1,0 +1,12 @@
+{
+  "name": "jarvis-watch",
+  "private": true,
+  "version": "0.1.8",
+  "type": "module",
+  "scripts": {
+    "build": "node ../scripts/generate-watch-config.mjs && zeus build"
+  },
+  "dependencies": {
+    "@zeppos/zml": "0.0.43"
+  }
+}
