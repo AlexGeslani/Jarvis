@@ -5,7 +5,6 @@ import { readFile } from 'node:fs/promises'
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const SCREENSHOTS = [
   'docs/screenshots/jarvis-watch-ready.png',
-  'docs/screenshots/jarvis-watch-response.png',
 ]
 
 function pngDimensions(image) {
@@ -41,7 +40,7 @@ test('watch documentation preview mirrors the 480px source geometry and both sta
   assert.doesNotMatch(preview, /simulator|physical capture|https?:\/\/|(?:\d{1,3}\.){3}\d{1,3}|\.lan\b/i)
 })
 
-test('watch preview screenshots keep stable paths, signatures, and 1280x900 dimensions', async () => {
+test('watch preview screenshot keeps a stable path, signature, and 1280x900 dimensions', async () => {
   const images = await Promise.all(SCREENSHOTS.map((path) => readFile(path)))
   for (let index = 0; index < images.length; index += 1) {
     assert.deepEqual(pngDimensions(images[index]), { width: 1280, height: 900 }, SCREENSHOTS[index])
@@ -50,7 +49,7 @@ test('watch preview screenshots keep stable paths, signatures, and 1280x900 dime
   }
 })
 
-test('README presents watch previews before existing browser screens with an honest boundary', async () => {
+test('README presents one watch preview with explanatory text before the browser screens', async () => {
   const readme = await readFile('README.md', 'utf8')
   const interfaceSection = readme.slice(readme.indexOf('## Interface'), readme.indexOf('## What works today'))
   const watchHeading = interfaceSection.indexOf('### Active Max watch')
@@ -59,10 +58,12 @@ test('README presents watch previews before existing browser screens with an hon
   assert.ok(watchHeading >= 0, 'Interface must include the watch subsection')
   assert.ok(browserHeading > watchHeading, 'watch subsection must precede browser subsection')
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-watch-ready\.png/)
-  assert.match(interfaceSection, /docs\/screenshots\/jarvis-watch-response\.png/)
+  assert.doesNotMatch(interfaceSection, /docs\/screenshots\/jarvis-watch-response\.png/)
   assert.match(interfaceSection, /Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn/)
-  assert.match(interfaceSection, /Round Active Max source-faithful preview showing Jarvis returned to ready after a synthetic completed response/)
-  assert.match(interfaceSection, /browser-rendered, source-faithful documentation previews/i)
+  assert.match(interfaceSection, /Explicit voice control/)
+  assert.match(interfaceSection, /Private response path/)
+  assert.match(interfaceSection, /Clear lifecycle/)
+  assert.match(interfaceSection, /browser-rendered, source-faithful documentation preview/i)
   assert.match(interfaceSection, /physical Active Max remains authoritative/i)
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-browser-ready\.png/)
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-browser-response\.png/)
