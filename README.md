@@ -22,11 +22,11 @@ See the [roadmap](ROADMAP.md) for the distinction between the current baseline a
 
 ### Active Max watch
 
-| Ready for an explicit voice turn | Returned to ready after a completed response |
+| Active Max interface | Watch experience |
 |---|---|
-| ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | ![Round Active Max source-faithful preview showing Jarvis returned to ready after a synthetic completed response](docs/screenshots/jarvis-watch-response.png) |
+| ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | **Explicit voice control.** Tap **Start Voice**, speak for up to eight seconds, then tap again or let the recording stop automatically.<br><br>**Private response path.** The recording travels through the paired phone to the user-operated LAN services; response text and MP3 playback return to the watch.<br><br>**Clear lifecycle.** The presence ring and status label distinguish ready, listening, processing, speaking, and error states. |
 
-These are browser-rendered, source-faithful documentation previews; the physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
+This is a browser-rendered, source-faithful documentation preview; the physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
 
 ### Browser
 
