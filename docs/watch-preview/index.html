@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jarvis Active Max watch preview</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #01070c;
+      --page-glow: #06232c;
+      --surface: #061017;
+      --line: #124553;
+      --watch: #020712;
+      --cyan: #00e5ff;
+      --indigo: #675cff;
+      --pale: #eafcff;
+      --muted: #6f98a6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      min-width: 1280px;
+      min-height: 900px;
+      background:
+        radial-gradient(circle at 38% 34%, rgba(0, 229, 255, 0.075), transparent 31%),
+        radial-gradient(circle at 79% 26%, rgba(103, 92, 255, 0.055), transparent 27%),
+        linear-gradient(145deg, #03131b 0%, var(--page) 54%, #010407 100%);
+      color: var(--pale);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .canvas {
+      position: relative;
+      width: 1280px;
+      height: 900px;
+      margin: 0 auto;
+    }
+
+    .masthead {
+      position: absolute;
+      top: 100px;
+      left: 190px;
+      z-index: 3;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      line-height: 1;
+    }
+
+    .eyebrow span { color: #6da4b1; }
+
+    h1 {
+      margin: 0;
+      font-size: 40px;
+      font-weight: 760;
+      letter-spacing: -0.045em;
+      line-height: 1.08;
+    }
+
+    .stage {
+      position: absolute;
+      top: 224px;
+      left: 138px;
+      display: grid;
+      grid-template-columns: 520px 372px;
+      gap: 98px;
+      align-items: start;
+    }
+
+    .watch-preview {
+      width: 520px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .watch-shell {
+      position: relative;
+      width: 504px;
+      height: 504px;
+      margin: 0 auto;
+      padding: 12px;
+      border: 2px solid #16232d;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #141d25, #05090e 58%, #111c24);
+      box-shadow:
+        0 0 0 4px #050b10,
+        0 24px 60px rgba(0, 0, 0, 0.58),
+        0 0 52px rgba(0, 229, 255, 0.045);
+    }
+
+    .crown {
+      position: absolute;
+      z-index: -1;
+      top: 160px;
+      right: -23px;
+      width: 29px;
+      height: 72px;
+      border: 2px solid #20333e;
+      border-left: 0;
+      border-radius: 0 13px 13px 0;
+      background: linear-gradient(90deg, #0a1118, #17242d);
+    }
+
+    .watch-face {
+      position: relative;
+      width: 480px;
+      height: 480px;
+      overflow: hidden;
+      border-radius: 50%;
+      background: var(--watch);
+      box-shadow:
+        inset 0 0 0 1px rgba(234, 252, 255, 0.025),
+        inset 0 0 68px rgba(0, 0, 0, 0.88);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .widget {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .brand {
+      left: 86px;
+      top: 30px;
+      width: 308px;
+      height: 44px;
+      color: var(--pale);
+      font-size: 27px;
+      font-weight: 500;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .privacy {
+      left: 120px;
+      top: 66px;
+      width: 240px;
+      height: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .ring-outer {
+      left: 116px;
+      top: 94px;
+      width: 248px;
+      height: 248px;
+      border-radius: 50%;
+      background: #075d73;
+      box-shadow: 0 0 32px rgba(0, 229, 255, 0.09);
+    }
+
+    .ring-outer-cutout {
+      left: 124px;
+      top: 102px;
+      width: 232px;
+      height: 232px;
+      border-radius: 50%;
+      background: var(--watch);
+    }
+
+    .ring-middle {
+      left: 148px;
+      top: 126px;
+      width: 184px;
+      height: 184px;
+      border-radius: 50%;
+      background: var(--indigo);
+      box-shadow: 0 0 32px rgba(103, 92, 255, 0.14);
+    }
+
+    .ring-middle-cutout {
+      left: 156px;
+      top: 134px;
+      width: 168px;
+      height: 168px;
+      border-radius: 50%;
+      background: #061527;
+    }
+
+    .core {
+      left: 191px;
+      top: 169px;
+      width: 98px;
+      height: 98px;
+      border-radius: 50%;
+      background: #126276;
+      box-shadow: 0 0 35px rgba(0, 229, 255, 0.2);
+    }
+
+    .glyph {
+      left: 185px;
+      top: 161px;
+      width: 110px;
+      height: 114px;
+      color: var(--pale);
+      font-size: 55px;
+      font-weight: 400;
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(234, 252, 255, 0.38);
+    }
+
+    .status {
+      left: 104px;
+      top: 282px;
+      width: 272px;
+      height: 34px;
+      color: var(--cyan);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .response {
+      left: 74px;
+      top: 315px;
+      width: 332px;
+      height: 46px;
+      padding: 0 4px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    .action {
+      left: 112px;
+      top: 364px;
+      width: 256px;
+      height: 70px;
+      border: 1px solid rgba(0, 229, 255, 0.13);
+      border-radius: 35px;
+      background: #063d52;
+      color: var(--pale);
+      font-size: 21px;
+      font-weight: 600;
+      line-height: 1;
+      box-shadow:
+        inset 0 1px 0 rgba(234, 252, 255, 0.08),
+        0 10px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .footer {
+      left: 96px;
+      top: 440px;
+      width: 288px;
+      height: 22px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .footer span { padding: 0 6px; }
+
+    figcaption {
+      margin-top: 24px;
+      color: #7395a1;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .evidence-card {
+      width: 372px;
+      margin-top: 84px;
+      padding: 28px 28px 27px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(4, 14, 20, 0.88);
+      box-shadow:
+        0 24px 58px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(234, 252, 255, 0.025);
+    }
+
+    .card-layout {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .mark {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--cyan);
+      border-radius: 50%;
+      box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.08);
+    }
+
+    .mark::before,
+    .mark::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border: 1px solid rgba(0, 229, 255, 0.72);
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .mark::before { width: 22px; height: 22px; }
+    .mark::after { width: 10px; height: 10px; background: rgba(0, 229, 255, 0.25); }
+
+    .evidence-card h2 {
+      margin: 0 0 10px;
+      color: var(--pale);
+      font-size: 16px;
+      font-weight: 760;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .evidence-card p {
+      margin: 0;
+      color: #a9c0ca;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .evidence-card p + p { margin-top: 12px; }
+
+    .state-data { display: none; }
+  </style>
+</head>
+<body>
+  <main class="canvas" aria-labelledby="preview-title">
+    <header class="masthead">
+      <p class="eyebrow">ACTIVE MAX <span>·</span> 480 × 480</p>
+      <h1 id="preview-title">Jarvis watch preview</h1>
+    </header>
+
+    <section class="stage" aria-label="Jarvis Active Max documentation preview">
+      <figure class="watch-preview">
+        <div class="watch-shell">
+          <div class="crown" aria-hidden="true"></div>
+          <div class="watch-face" data-width="480" data-height="480" role="img" aria-label="Round Jarvis watch interface">
+            <p class="widget brand" data-geometry="86,30,308,44">J A R V I S</p>
+            <p class="widget privacy" data-geometry="120,66,240,28">PRIVATE LOCAL VOICE</p>
+            <div class="widget ring-outer" data-geometry="116,94,248,248" aria-hidden="true"></div>
+            <div class="widget ring-outer-cutout" data-geometry="124,102,232,232" aria-hidden="true"></div>
+            <div class="widget ring-middle" data-geometry="148,126,184,184" aria-hidden="true"></div>
+            <div class="widget ring-middle-cutout" data-geometry="156,134,168,168" aria-hidden="true"></div>
+            <div class="widget core" data-geometry="191,169,98,98" aria-hidden="true"></div>
+            <div class="widget glyph" data-geometry="185,161,110,114" aria-hidden="true">◇</div>
+            <p class="widget status" data-geometry="104,282,272,34" id="watch-status">READY</p>
+            <p class="widget response" data-geometry="74,315,332,46" id="watch-response">TAP TO SPEAK</p>
+            <div class="widget action" data-geometry="112,364,256,70" id="watch-action">START VOICE</div>
+            <p class="widget footer" data-geometry="96,440,288,22">V0.1.8 <span>•</span> 8 SEC <span>•</span> LAN</p>
+          </div>
+        </div>
+        <figcaption id="state-caption">Jarvis ready for an explicit voice turn</figcaption>
+      </figure>
+
+      <aside class="evidence-card" aria-label="Preview boundary">
+        <div class="card-layout">
+          <div class="mark" aria-hidden="true"></div>
+          <div>
+            <h2>Browser-rendered, source-faithful preview</h2>
+            <p>This documentation view mirrors the native 480 × 480 layout, labels, colors, and completed-response state.</p>
+            <p>The physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <div class="state-data" aria-hidden="true">
+      <span data-state="ready" data-status="READY" data-response="TAP TO SPEAK" data-action="START VOICE" data-caption="Jarvis ready for an explicit voice turn"></span>
+      <span data-state="response" data-status="READY" data-response="Systems nominal. Ready to assist." data-action="START VOICE" data-caption="Jarvis returned to ready after a completed response"></span>
+    </div>
+  </main>
+
+  <script>
+    const requestedState = new URLSearchParams(window.location.search).get('state')
+    const stateName = requestedState === 'response' ? 'response' : 'ready'
+    const state = document.querySelector(`[data-state="${stateName}"]`)
+    document.getElementById('watch-status').textContent = state.dataset.status
+    document.getElementById('watch-response').textContent = state.dataset.response
+    document.getElementById('watch-action').textContent = state.dataset.action
+    document.getElementById('state-caption').textContent = state.dataset.caption
+    document.querySelector('.watch-face').setAttribute(
+      'aria-label',
+      `Round Jarvis watch interface: ${state.dataset.status}. ${state.dataset.response}. ${state.dataset.action}.`,
+    )
+  </script>
+</body>
+</html>
