@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Jarvis AI core</title>
+  <desc id="description">A cyan and indigo segmented energy core with a diamond-shaped artificial intelligence glyph.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#030711"/>
+  <circle cx="32" cy="32" r="27" fill="#061527" stroke="#163847" stroke-width="1.5"/>
+  <path d="M32 5v5M59 32h-5M32 59v-5M5 32h5" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"/>
+  <circle data-role="outer-core" cx="32" cy="32" r="23" fill="none" stroke="#00e5ff" stroke-width="2.5"/>
+  <circle data-role="segmented-ring" cx="32" cy="32" r="17" fill="none" stroke="#675cff" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="12 5 4 5" transform="rotate(-22 32 32)"/>
+  <circle cx="32" cy="32" r="10.5" fill="#0a4455" stroke="#00e5ff" stroke-width="1.5"/>
+  <path data-role="diamond-core" d="M32 23.5 40.5 32 32 40.5 23.5 32Z" fill="#061527" stroke="#eafcff" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="32" cy="32" r="2.5" fill="#00e5ff"/>
+</svg>
