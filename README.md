@@ -20,6 +20,16 @@ See the [roadmap](ROADMAP.md) for the distinction between the current baseline a
 
 ## Interface
 
+### Active Max watch
+
+| Ready for an explicit voice turn | Returned to ready after a completed response |
+|---|---|
+| ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | ![Round Active Max source-faithful preview showing Jarvis returned to ready after a synthetic completed response](docs/screenshots/jarvis-watch-response.png) |
+
+These are browser-rendered, source-faithful documentation previews; the physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
+
+### Browser
+
 | Ready for an explicit voice turn | Completed response with transcript and playback state |
 |---|---|
 | ![Jarvis browser interface ready for Hold-to-Talk or Open Dialogue on the private local link](docs/screenshots/jarvis-browser-ready.png) | ![Jarvis browser interface showing a completed local conversation and spoken response state](docs/screenshots/jarvis-browser-response.png) |
@@ -225,7 +235,8 @@ A successful build or QR install is not physical-device acceptance. The checked-
 ├── api/                 aiohttp API, media pipeline, policy, storage, and Python tests
 ├── docs/
 │   ├── architecture/    product architecture diagram
-│   ├── screenshots/     browser review states
+│   ├── screenshots/     browser and watch documentation states
+│   ├── watch-preview/   deterministic source-faithful watch renderer
 │   └── openapi.yaml     shared v1 client contract
 ├── tests/js/            browser, watch, protocol, and container contract tests
 ├── watch/               Zepp OS Device App, phone Side Service, manifest, and build output
