@@ -21,15 +21,15 @@ test('watch documentation preview mirrors the 480px source geometry and both sta
 
   assert.match(preview, /class="watch-face"[^>]*data-width="480"[^>]*data-height="480"/)
   assert.match(preview, /\.watch-face\s*\{[\s\S]*?width:\s*480px;[\s\S]*?height:\s*480px;/)
-  assert.match(preview, /data-geometry="86,30,308,44"[^>]*>J A R V I S</)
-  assert.match(preview, /data-geometry="120,66,240,28"[^>]*>PRIVATE LOCAL VOICE</)
+  assert.match(preview, /data-geometry="100,34,280,38"[^>]*>J A R V I S</)
+  assert.match(preview, /data-geometry="120,70,240,22"[^>]*>MECHANICAL INTELLIGENCE</)
   assert.match(preview, /data-geometry="116,94,248,248"/)
   assert.match(preview, /data-geometry="148,126,184,184"/)
   assert.match(preview, /data-geometry="191,169,98,98"/)
   assert.match(preview, /data-geometry="104,282,272,34"/)
   assert.match(preview, /data-geometry="74,315,332,46"/)
   assert.match(preview, /data-geometry="112,364,256,70"/)
-  assert.match(preview, /data-geometry="96,440,288,22"[^>]*>V0\.1\.11\s*<span[^>]*>•<\/span>\s*8 SEC\s*<span[^>]*>•<\/span>\s*LAN</)
+  assert.match(preview, /data-geometry="96,440,288,22"[^>]*>V0\.1\.12\s*<span[^>]*>•<\/span>\s*8 SEC\s*<span[^>]*>•<\/span>\s*LAN</)
 
   assert.match(preview, /ACTIVE MAX\s*<span[^>]*>·<\/span>\s*480 × 480/)
   assert.match(preview, /Jarvis watch preview/)

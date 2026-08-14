@@ -2,7 +2,7 @@
 
 **A local-first voice assistant for the browser and Amazfit Active Max, now using a strict n8n reasoning workflow.** Jarvis turns an explicit microphone or text interaction into private speech recognition, bounded local reasoning, and a spoken response—without exposing the experience as a public web service.
 
-**Core release:** `0.1.8` · **Watch release:** `0.1.11` · **API contract:** `v1` · **Deployment:** private LAN only
+**Core release:** `0.1.8` · **Watch release:** `0.1.12` · **API contract:** `v1` · **Deployment:** private LAN only
 
 > [!IMPORTANT]
 > This repository is not a turn-key cloud service or public demo. A working clone requires operator-supplied speech-to-text, text-to-speech, reasoning, HTTPS ingress, and—when using the watch—a paired phone and Amazfit Active Max. No GitHub Pages site, public API, hosted model, or marketplace package is provided.
@@ -13,7 +13,7 @@
 - **n8n reasoning orchestration** through one authenticated, typed webhook path: validate turn → call private local model → normalize response.
 - **Zero n8n execution retention** for successful, failed, manual, or in-progress executions in the supplied workflow.
 - **Shared browser/watch API** with origin checks, session ownership, idempotency, cancellation, strict media limits, and ephemeral response audio.
-- **Jarvis Watch `0.1.11`** with reusable-recorder lifecycle recovery, bounded STOP-event watchdog, stale-callback fencing, and response-volume restoration.
+- **Jarvis Watch `0.1.12`** with the validated terminal-green mechanical presence animation, a static failure-safe render, matching app icon, reusable-recorder lifecycle recovery, bounded STOP-event watchdog, stale-callback fencing, and response-volume restoration.
 - **No tools, Home Assistant, memory service, search, or direct fallback** in the selected n8n path. The current workflow generates concise spoken responses only.
 
 ## Interface
