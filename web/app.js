@@ -21,6 +21,11 @@ const textForm = document.querySelector('#text-form')
 const textInput = document.querySelector('#text-input')
 const sendButton = document.querySelector('#send')
 const cancelButton = document.querySelector('#cancel')
+const coreStatus = document.querySelector('#core-status')
+const networkStatus = document.querySelector('#network-status')
+const voiceStatus = document.querySelector('#voice-status')
+const memoryStatus = document.querySelector('#memory-status')
+const conversationState = document.querySelector('#conversation-state')
 
 const API = '/api/v1'
 const TURN_ENDPOINT = '/api/v1/turns'
@@ -67,8 +72,8 @@ class Presence {
 
   resize() {
     const ratio = Math.min(window.devicePixelRatio || 1, 2)
-    const width = window.innerWidth
-    const height = window.innerHeight
+    const width = this.canvas.clientWidth || window.innerWidth
+    const height = this.canvas.clientHeight || window.innerHeight
     this.canvas.width = Math.round(width * ratio)
     this.canvas.height = Math.round(height * ratio)
     this.canvas.dataset.ratio = String(ratio)
@@ -89,6 +94,7 @@ class Presence {
       error: 'ATTENTION',
     }
     stateLabel.textContent = labels[state] || state.toUpperCase()
+    updateSystemStatus(state)
     if (this.reducedMotion) this.draw(performance.now())
   }
 
@@ -113,19 +119,19 @@ class Presence {
     const context = this.context
     const width = this.canvas.clientWidth || window.innerWidth
     const height = this.canvas.clientHeight || window.innerHeight
-    const mobile = width < 900
+    const compact = width < 620
     const centerX = width * 0.5
-    const centerY = height * (mobile ? 0.41 : 0.49)
-    const baseRadius = Math.min(width, height) * (mobile ? 0.17 : 0.2)
+    const centerY = height * 0.5
+    const baseRadius = Math.min(width, height) * (compact ? 0.19 : 0.215)
     const reducedTime = this.reducedMotion ? 0 : timestamp / 1000
     const energy = this.reducedMotion ? 0.08 : this.sampleEnergy()
     const statePulse = this.state === 'thinking' ? 0.1 : energy * 0.5
     const pulse = 1 + statePulse + Math.sin(reducedTime * 1.7) * 0.018
     const palette = this.state === 'error'
-      ? { primary: '#ff416c', secondary: '#78264d', rgb: '255,65,108' }
+      ? { primary: '#ff5a62', secondary: '#7a1f2c', rgb: '255,90,98' }
       : this.state === 'thinking'
-        ? { primary: '#7468ff', secondary: '#00b9e8', rgb: '103,92,255' }
-        : { primary: '#00e5ff', secondary: '#675cff', rgb: '0,229,255' }
+        ? { primary: '#a9ff63', secondary: '#18c766', rgb: '169,255,99' }
+        : { primary: '#4dff88', secondary: '#18c766', rgb: '77,255,136' }
 
     context.clearRect(0, 0, width, height)
     context.save()
@@ -141,7 +147,7 @@ class Presence {
     )
     ambient.addColorStop(0, `rgba(${palette.rgb},${0.22 + energy * 0.24})`)
     ambient.addColorStop(0.35, `rgba(${palette.rgb},${0.075 + energy * 0.08})`)
-    ambient.addColorStop(0.72, 'rgba(103,92,255,.025)')
+    ambient.addColorStop(0.72, 'rgba(24,199,102,.025)')
     ambient.addColorStop(1, 'rgba(0,0,0,0)')
     context.fillStyle = ambient
     context.beginPath()
@@ -149,29 +155,32 @@ class Presence {
     context.fill()
 
     this.drawParticles(context, centerX, centerY, baseRadius, reducedTime, energy, palette)
-    this.drawSegmentedRing(context, centerX, centerY, baseRadius * 1.62, reducedTime * 0.2, 28, palette.primary, 0.42, 1)
-    this.drawSegmentedRing(context, centerX, centerY, baseRadius * 1.37, -reducedTime * 0.38, 18, palette.secondary, 0.55, 1.4)
-    this.drawSegmentedRing(context, centerX, centerY, baseRadius * 1.13, reducedTime * 0.64, 12, palette.primary, 0.72, 1.2 + energy * 2)
+    this.drawCorePlate(context, centerX, centerY, baseRadius, palette)
+    this.drawMechanicalBand(context, centerX, centerY, baseRadius * 1.53, baseRadius * 1.86, reducedTime * 0.055, palette, energy, 9)
+    this.drawRadialTicks(context, centerX, centerY, baseRadius * 1.34, baseRadius * 1.5, -reducedTime * 0.09, palette, energy)
+    this.drawMechanicalBand(context, centerX, centerY, baseRadius * 1.02, baseRadius * 1.27, -reducedTime * 0.11, palette, energy, 7)
+    this.drawTechnicalLabels(context, centerX, centerY, baseRadius, reducedTime, palette)
 
     context.save()
     context.translate(centerX, centerY)
-    context.rotate(reducedTime * (this.state === 'thinking' ? 0.7 : 0.22))
-    context.strokeStyle = `rgba(${palette.rgb},.22)`
+    context.rotate(-reducedTime * (this.state === 'thinking' ? 0.42 : 0.11))
+    context.strokeStyle = `rgba(${palette.rgb},.38)`
     context.lineWidth = 1
-    for (let index = 0; index < 6; index += 1) {
-      context.rotate(Math.PI / 3)
+    for (let index = 0; index < 5; index += 1) {
+      const angle = index * (Math.PI * 2 / 5)
+      const radius = baseRadius * (0.74 + (index % 2) * 0.06)
       context.beginPath()
-      context.moveTo(baseRadius * 0.58, 0)
-      context.lineTo(baseRadius * 0.98, 0)
+      context.moveTo(Math.cos(angle) * baseRadius * 0.48, Math.sin(angle) * baseRadius * 0.48)
+      context.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius)
       context.stroke()
       context.beginPath()
-      context.arc(baseRadius * 1.02, 0, 2 + energy * 3, 0, Math.PI * 2)
+      context.arc(Math.cos(angle) * radius, Math.sin(angle) * radius, 2 + energy * 4, 0, Math.PI * 2)
       context.fillStyle = palette.primary
       context.fill()
     }
     context.restore()
 
-    const shellRadius = baseRadius * 0.83 * pulse
+    const shellRadius = baseRadius * 0.46 * pulse
     const shell = context.createRadialGradient(
       centerX - shellRadius * 0.22,
       centerY - shellRadius * 0.25,
@@ -183,7 +192,7 @@ class Presence {
     shell.addColorStop(0, 'rgba(235,254,255,.98)')
     shell.addColorStop(0.12, `rgba(${palette.rgb},${0.9 + energy * 0.1})`)
     shell.addColorStop(0.42, `rgba(${palette.rgb},.28)`)
-    shell.addColorStop(0.68, 'rgba(21,31,91,.2)')
+    shell.addColorStop(0.68, 'rgba(9,69,34,.2)')
     shell.addColorStop(1, 'rgba(0,0,0,0)')
     context.fillStyle = shell
     context.beginPath()
@@ -229,33 +238,137 @@ class Presence {
       const alpha = 0.12 + particle.depth * 0.42 + energy * 0.18
       context.fillStyle = particle.depth > 0.66
         ? `rgba(${palette.rgb},${alpha})`
-        : `rgba(103,92,255,${alpha * 0.72})`
+        : `rgba(24,199,102,${alpha * 0.72})`
       context.beginPath()
       context.arc(x, y, particle.size * (0.7 + energy), 0, Math.PI * 2)
       context.fill()
     }
   }
 
-  drawSegmentedRing(context, x, y, radius, rotation, segments, color, alpha, width) {
+  drawCorePlate(context, x, y, radius, palette) {
+    context.save()
+    context.globalCompositeOperation = 'source-over'
+    const plate = context.createRadialGradient(x - radius * 0.16, y - radius * 0.18, radius * 0.08, x, y, radius)
+    plate.addColorStop(0, 'rgba(8,32,18,.95)')
+    plate.addColorStop(0.56, 'rgba(2,13,7,.98)')
+    plate.addColorStop(0.84, 'rgba(0,5,3,.99)')
+    plate.addColorStop(1, 'rgba(15,80,39,.72)')
+    context.fillStyle = plate
+    context.beginPath()
+    context.arc(x, y, radius * 0.98, 0, Math.PI * 2)
+    context.fill()
+    context.strokeStyle = `rgba(${palette.rgb},.24)`
+    context.lineWidth = radius * 0.035
+    context.beginPath()
+    context.arc(x, y, radius * 0.92, 0, Math.PI * 2)
+    context.stroke()
+    context.strokeStyle = 'rgba(184,255,208,.08)'
+    context.lineWidth = 1
+    context.beginPath()
+    context.arc(x, y, radius * 0.72, 0, Math.PI * 2)
+    context.stroke()
+    context.restore()
+  }
+
+  drawMechanicalBand(context, x, y, innerRadius, outerRadius, rotation, palette, energy, segments) {
     context.save()
     context.translate(x, y)
     context.rotate(rotation)
-    context.strokeStyle = color
-    context.globalAlpha = alpha
-    context.lineWidth = width
-    const step = (Math.PI * 2) / segments
+    const step = Math.PI * 2 / segments
     for (let index = 0; index < segments; index += 1) {
-      const start = index * step
-      const length = step * (index % 4 === 0 ? 0.72 : 0.43)
+      const gap = step * (index % 3 === 0 ? 0.13 : 0.07)
+      const start = index * step + gap
+      const end = (index + 1) * step - gap * (index % 2 === 0 ? 1.45 : 1)
       context.beginPath()
-      context.arc(0, 0, radius, start, start + length)
+      context.arc(0, 0, outerRadius, start, end)
+      context.arc(0, 0, innerRadius, end, start, true)
+      context.closePath()
+      const gradient = context.createRadialGradient(0, 0, innerRadius, 0, 0, outerRadius)
+      gradient.addColorStop(0, `rgba(${palette.rgb},${0.07 + energy * 0.08})`)
+      gradient.addColorStop(0.4, index % 3 === 0 ? 'rgba(64,210,111,.32)' : 'rgba(14,76,37,.3)')
+      gradient.addColorStop(0.78, index % 2 === 0 ? 'rgba(122,255,163,.36)' : 'rgba(20,118,56,.27)')
+      gradient.addColorStop(1, 'rgba(3,21,10,.82)')
+      context.fillStyle = gradient
+      context.fill()
+      context.strokeStyle = `rgba(${palette.rgb},${index % 3 === 0 ? 0.5 : 0.22})`
+      context.lineWidth = index % 3 === 0 ? 1.6 : 0.8
       context.stroke()
+
+      if (index % 2 === 0) {
+        const mid = (start + end) / 2
+        context.fillStyle = `rgba(${palette.rgb},${0.44 + energy * 0.3})`
+        context.beginPath()
+        context.arc(Math.cos(mid) * ((innerRadius + outerRadius) / 2), Math.sin(mid) * ((innerRadius + outerRadius) / 2), Math.max(1.4, (outerRadius - innerRadius) * 0.055), 0, Math.PI * 2)
+        context.fill()
+      }
+    }
+    context.restore()
+  }
+
+  drawRadialTicks(context, x, y, innerRadius, outerRadius, rotation, palette, energy) {
+    context.save()
+    context.translate(x, y)
+    context.rotate(rotation)
+    const ticks = 72
+    for (let index = 0; index < ticks; index += 1) {
+      const angle = index * Math.PI * 2 / ticks
+      const major = index % 6 === 0
+      const medium = index % 3 === 0
+      const from = innerRadius + (major ? 0 : medium ? (outerRadius - innerRadius) * 0.24 : (outerRadius - innerRadius) * 0.48)
+      context.strokeStyle = `rgba(${palette.rgb},${major ? 0.76 : medium ? 0.42 : 0.2})`
+      context.lineWidth = major ? 1.8 + energy * 2 : 0.8
+      context.beginPath()
+      context.moveTo(Math.cos(angle) * from, Math.sin(angle) * from)
+      context.lineTo(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius)
+      context.stroke()
+    }
+    context.restore()
+  }
+
+  drawTechnicalLabels(context, x, y, radius, time, palette) {
+    const labels = [
+      ['CORE 01', -2.48, 1.12],
+      ['LOCAL', -0.82, 1.28],
+      ['V-LOCK', 0.28, 1.18],
+      ['SYNC', 1.2, 1.31],
+      ['EPH', 2.2, 1.16],
+    ]
+    context.save()
+    context.translate(x, y)
+    context.rotate(time * 0.018)
+    context.fillStyle = `rgba(${palette.rgb},.48)`
+    context.font = `${Math.max(6, radius * 0.065)}px ui-monospace, monospace`
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    for (const [label, angle, distance] of labels) {
+      context.save()
+      context.translate(Math.cos(angle) * radius * distance, Math.sin(angle) * radius * distance)
+      context.rotate(angle + Math.PI / 2)
+      context.fillText(label, 0, 0)
+      context.restore()
     }
     context.restore()
   }
 }
 
 const presence = new Presence(canvas)
+
+function updateSystemStatus(state) {
+  const label = state === 'thinking'
+    ? 'PROCESSING'
+    : state === 'listening'
+      ? 'LISTENING'
+      : state === 'speaking'
+        ? 'RESPONDING'
+        : state === 'error'
+          ? 'ATTENTION'
+          : 'STANDBY'
+  coreStatus.textContent = state === 'error' ? 'DEGRADED' : state === 'thinking' ? 'ACTIVE' : 'ONLINE'
+  networkStatus.textContent = session ? 'LOCAL LINK' : state === 'error' ? 'CHECK LINK' : 'CONNECTING'
+  voiceStatus.textContent = label
+  memoryStatus.textContent = 'EPHEMERAL'
+  conversationState.textContent = label
+}
 
 function idempotencyKey() {
   return crypto.randomUUID()
@@ -273,6 +386,7 @@ async function ensureSession() {
   if (!response.ok) throw new Error(safeErrorMessage(payload, 'Local session unavailable.'))
   session = payload
   connectionElement.textContent = 'LOCAL LINK'
+  updateSystemStatus('idle')
   setStatus('Local voice link ready', 'idle')
   return session
 }
