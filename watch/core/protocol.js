@@ -111,10 +111,10 @@ export function boundedWatchText(value, limit = 72) {
 
 export function presenceFrame(state, tick) {
   const styles = {
-    idle: { coreColor: 0x126276, glyph: '◇' },
-    listening: { coreColor: 0x00e5ff, glyph: '◈' },
-    thinking: { coreColor: 0x675cff, glyph: '◇' },
-    speaking: { coreColor: 0xb9f6ff, glyph: '◆' },
+    idle: { coreColor: 0x4dff88, glyph: '◇' },
+    listening: { coreColor: 0xa9ff63, glyph: '◈' },
+    thinking: { coreColor: 0xa9ff63, glyph: '◇' },
+    speaking: { coreColor: 0x4dff88, glyph: '◆' },
     error: { coreColor: 0xff577a, glyph: '!' },
   }
   const style = styles[state] || styles.idle

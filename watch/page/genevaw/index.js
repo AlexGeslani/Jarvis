@@ -14,11 +14,27 @@ import { createScopedPlaybackVolume } from '../../core/playback-volume'
 const MAX_RECORDING_MS = 8000
 const STOP_COMPLETION_TIMEOUT_MS = 2000
 const CHUNK_CHARACTERS = 6144
-const BACKGROUND = 0x020712
-const CYAN = 0x00e5ff
-const INDIGO = 0x675cff
-const PALE = 0xeafcff
-const MUTED = 0x6f98a6
+const BACKGROUND = 0x010503
+const DEEP_GREEN = 0x03180c
+const PLATE_GREEN = 0x062512
+const TRACK_GREEN = 0x0b3c1f
+const MID_GREEN = 0x126632
+const SIGNAL_GREEN = 0x18c766
+const BRIGHT_GREEN = 0x4dff88
+const LIME = 0xa9ff63
+const PALE = 0xefffdb
+const MUTED = 0x75a887
+const CENTER_X = 240
+const CENTER_Y = 218
+const ORBIT_RADIUS = 124
+const NODE_SIZE = 8
+const PRESENCE_DELAYS = {
+  idle: 560,
+  listening: 260,
+  thinking: 150,
+  speaking: 210,
+  error: 480,
+}
 
 let recorder = null
 let player = null
@@ -62,10 +78,15 @@ Page(
       tick: 0,
       recordTimer: null,
       stopTimer: null,
+      animationTimer: null,
+      animationEnabled: false,
+      staticBase: null,
       outer: null,
       middle: null,
       core: null,
       glyph: null,
+      ringNodes: [],
+      nodeGeometry: [],
       status: null,
       response: null,
       action: null,
@@ -73,34 +94,49 @@ Page(
 
     build() {
       activePage = this
-      ui.createWidget(ui.widget.FILL_RECT, {
+      this.state.staticBase = ui.createWidget(ui.widget.FILL_RECT, {
         x: 0, y: 0, w: 480, h: 480, color: BACKGROUND,
-      })
-      ui.createWidget(ui.widget.TEXT, {
-        x: 86, y: 30, w: 308, h: 44,
-        text: 'J A R V I S', text_size: 27, color: PALE,
-        align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
-      })
-      ui.createWidget(ui.widget.TEXT, {
-        x: 120, y: 66, w: 240, h: 28,
-        text: 'PRIVATE LOCAL VOICE', text_size: 13, color: MUTED,
-        align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
       })
 
       this.state.outer = ui.createWidget(ui.widget.FILL_RECT, {
-        x: 116, y: 94, w: 248, h: 248, color: 0x07374b, radius: 124,
+        x: 116, y: 94, w: 248, h: 248, color: TRACK_GREEN, radius: 124,
       })
       ui.createWidget(ui.widget.FILL_RECT, {
         x: 124, y: 102, w: 232, h: 232, color: BACKGROUND, radius: 116,
       })
       this.state.middle = ui.createWidget(ui.widget.FILL_RECT, {
-        x: 148, y: 126, w: 184, h: 184, color: INDIGO, radius: 92,
+        x: 148, y: 126, w: 184, h: 184, color: MID_GREEN, radius: 92,
       })
       ui.createWidget(ui.widget.FILL_RECT, {
-        x: 156, y: 134, w: 168, h: 168, color: 0x061527, radius: 84,
+        x: 156, y: 134, w: 168, h: 168, color: DEEP_GREEN, radius: 84,
       })
+
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * Math.PI * 2 - Math.PI / 2
+        const x = Math.round(CENTER_X + Math.cos(angle) * ORBIT_RADIUS - NODE_SIZE / 2)
+        const y = Math.round(CENTER_Y + Math.sin(angle) * ORBIT_RADIUS - NODE_SIZE / 2)
+        this.state.nodeGeometry.push({ x, y })
+        this.state.ringNodes.push(ui.createWidget(ui.widget.FILL_RECT, {
+          x, y, w: NODE_SIZE, h: NODE_SIZE,
+          color: index === 0 ? BRIGHT_GREEN : TRACK_GREEN,
+          radius: NODE_SIZE / 2,
+        }))
+      }
+
+      // Paint text after the ring widgets so the round-screen header stays unobscured.
+      ui.createWidget(ui.widget.TEXT, {
+        x: 100, y: 34, w: 280, h: 38,
+        text: 'J A R V I S', text_size: 24, color: PALE,
+        align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
+      })
+      ui.createWidget(ui.widget.TEXT, {
+        x: 120, y: 70, w: 240, h: 22,
+        text: 'MECHANICAL INTELLIGENCE', text_size: 11, color: MUTED,
+        align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
+      })
+
       this.state.core = ui.createWidget(ui.widget.FILL_RECT, {
-        x: 191, y: 169, w: 98, h: 98, color: 0x126276, radius: 49,
+        x: 191, y: 169, w: 98, h: 98, color: BRIGHT_GREEN, radius: 49,
       })
       this.state.glyph = ui.createWidget(ui.widget.TEXT, {
         x: 185, y: 161, w: 110, h: 114,
@@ -109,7 +145,7 @@ Page(
       })
       this.state.status = ui.createWidget(ui.widget.TEXT, {
         x: 104, y: 282, w: 272, h: 34,
-        text: 'CONNECTING', text_size: 17, color: CYAN,
+        text: 'CONNECTING', text_size: 17, color: BRIGHT_GREEN,
         align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
       })
       this.state.response = ui.createWidget(ui.widget.TEXT, {
@@ -121,16 +157,16 @@ Page(
       this.state.action = ui.createWidget(ui.widget.BUTTON, {
         x: 112, y: 364, w: 256, h: 70,
         text: 'START VOICE', text_size: 21,
-        normal_color: 0x063d52, press_color: 0x08677e,
+        normal_color: DEEP_GREEN, press_color: MID_GREEN,
         color: PALE, radius: 35,
       })
       this.state.action.addEventListener(ui.event.CLICK_UP, () => this.toggleRecording())
       ui.createWidget(ui.widget.TEXT, {
         x: 96, y: 440, w: 288, h: 22,
-        text: 'V0.1.11  •  8 SEC  •  LAN', text_size: 12, color: MUTED,
+        text: 'V0.1.12  •  8 SEC  •  LAN', text_size: 12, color: MUTED,
         align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
       })
-
+      this.startPresenceAnimation()
       this.ensureSession()
     },
 
@@ -375,31 +411,74 @@ Page(
     setPresence(mode, label) {
       this.state.mode = mode
       setText(this.state.status, label)
-      this.animatePresence()
+      if (!this.state.animationEnabled) return
+      try {
+        this.applyPresenceFrame()
+      } catch (error) {
+        this.disablePresenceAnimation('SAFE STATIC MODE')
+      }
     },
 
-    animatePresence() {
-      try {
-        this.state.tick += 1
-        const frame = presenceFrame(this.state.mode, this.state.tick)
-        const size = 94 + frame.ring * 6
-        const offset = (480 - size) / 2
-        this.state.core.setProperty(ui.prop.MORE, {
-          x: offset, y: 218 - size / 2, w: size, h: size,
-          color: frame.coreColor, radius: size / 2,
-        })
-        this.state.outer.setProperty(ui.prop.MORE, {
-          x: 116, y: 94, w: 248, h: 248,
-          color: frame.ring === 1 ? 0x075d73 : 0x07374b, radius: 124,
-        })
-        this.state.middle.setProperty(ui.prop.MORE, {
-          x: 148, y: 126, w: 184, h: 184,
-          color: frame.ring === 2 ? CYAN : INDIGO, radius: 92,
-        })
-        setText(this.state.glyph, frame.glyph)
-      } catch (error) {
-        setText(this.state.glyph, '◇')
+    startPresenceAnimation() {
+      this.state.animationEnabled = true
+      const step = () => {
+        if (!this.state.animationEnabled) return
+        try {
+          this.applyPresenceFrame()
+        } catch (error) {
+          this.disablePresenceAnimation('SAFE STATIC MODE')
+          return
+        }
+        const delay = PRESENCE_DELAYS[this.state.mode] || PRESENCE_DELAYS.idle
+        this.state.animationTimer = setTimeout(step, delay)
       }
+      step()
+    },
+
+    applyPresenceFrame() {
+      this.state.tick = (this.state.tick + 1) % 120
+      const frame = presenceFrame(this.state.mode, this.state.tick)
+      const lead = this.state.tick % this.state.ringNodes.length
+      for (let index = 0; index < this.state.ringNodes.length; index += 1) {
+        const distance = (index - lead + this.state.ringNodes.length) % this.state.ringNodes.length
+        const color = distance === 0
+          ? frame.coreColor
+          : distance === 1 || distance === this.state.ringNodes.length - 1
+            ? SIGNAL_GREEN
+            : distance === 2 || distance === this.state.ringNodes.length - 2
+              ? MID_GREEN
+              : TRACK_GREEN
+        const geometry = this.state.nodeGeometry[index]
+        this.state.ringNodes[index].setProperty(ui.prop.MORE, {
+          x: geometry.x, y: geometry.y, w: NODE_SIZE, h: NODE_SIZE,
+          color, radius: NODE_SIZE / 2,
+        })
+      }
+
+      const size = 94 + frame.ring * 4
+      this.state.core.setProperty(ui.prop.MORE, {
+        x: CENTER_X - size / 2, y: CENTER_Y - size / 2,
+        w: size, h: size, color: frame.coreColor, radius: size / 2,
+      })
+      this.state.outer.setProperty(ui.prop.MORE, {
+        x: 116, y: 94, w: 248, h: 248,
+        color: this.state.tick % 2 === 0 ? TRACK_GREEN : MID_GREEN,
+        radius: 124,
+      })
+      this.state.middle.setProperty(ui.prop.MORE, {
+        x: 148, y: 126, w: 184, h: 184,
+        color: frame.ring === 2 ? SIGNAL_GREEN : PLATE_GREEN,
+        radius: 92,
+      })
+      setText(this.state.glyph, frame.glyph)
+    },
+
+    disablePresenceAnimation(label = 'SAFE STATIC MODE') {
+      this.state.animationEnabled = false
+      if (this.state.animationTimer !== null) clearTimeout(this.state.animationTimer)
+      this.state.animationTimer = null
+      setText(this.state.status, label)
+      setText(this.state.glyph, '◇')
     },
 
     fail(message) {
@@ -411,8 +490,11 @@ Page(
     },
 
     onDestroy() {
+      this.state.animationEnabled = false
+      if (this.state.animationTimer !== null) clearTimeout(this.state.animationTimer)
       if (this.state.recordTimer !== null) clearTimeout(this.state.recordTimer)
       if (this.state.stopTimer !== null) clearTimeout(this.state.stopTimer)
+      this.state.animationTimer = null
       this.state.recordTimer = null
       this.state.stopTimer = null
       activePage = null
