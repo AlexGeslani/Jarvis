@@ -53,6 +53,48 @@ def test_n8n_backend_requires_webhook_and_credential_file(monkeypatch, tmp_path)
     assert config.n8n_api_key_file == credential
 
 
+def test_n8n_backend_accepts_private_lan_webhook(monkeypatch, tmp_path):
+    _set_common(monkeypatch)
+    monkeypatch.setenv("JARVIS_REASONING_BACKEND", "n8n")
+    monkeypatch.delenv("JARVIS_REASONING_URL", raising=False)
+    monkeypatch.delenv("JARVIS_REASONING_MODEL", raising=False)
+    monkeypatch.setenv(
+        "JARVIS_N8N_WEBHOOK_URL",
+        f"http://{'.'.join(map(str, (192, 168, 1, 225)))}:5678/webhook/jarvis",
+    )
+    credential = tmp_path / "n8n-token"
+    credential.write_text("opaque-test-token")
+    monkeypatch.setenv("JARVIS_N8N_API_KEY_FILE", str(credential))
+
+    config = Config.from_env()
+
+    assert config.n8n_webhook_url.startswith("http://192.168.")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://example.com/webhook/jarvis",
+        "http://10.evil.example/webhook/jarvis",
+        "http://192.168.evil.example/webhook/jarvis",
+        "http://172.15.0.1/webhook/jarvis",
+        "http://172.32.0.1/webhook/jarvis",
+    ],
+)
+def test_n8n_backend_rejects_public_or_nonprivate_http_webhook(monkeypatch, tmp_path, url):
+    _set_common(monkeypatch)
+    monkeypatch.setenv("JARVIS_REASONING_BACKEND", "n8n")
+    monkeypatch.delenv("JARVIS_REASONING_URL", raising=False)
+    monkeypatch.delenv("JARVIS_REASONING_MODEL", raising=False)
+    monkeypatch.setenv("JARVIS_N8N_WEBHOOK_URL", url)
+    credential = tmp_path / "n8n-token"
+    credential.write_text("opaque-test-token")
+    monkeypatch.setenv("JARVIS_N8N_API_KEY_FILE", str(credential))
+
+    with pytest.raises(ValueError, match="HTTP only through"):
+        Config.from_env()
+
+
 @pytest.mark.parametrize("backend", ["", "agent", "cloud"])
 def test_reasoning_backend_is_closed(monkeypatch, backend):
     _set_common(monkeypatch)

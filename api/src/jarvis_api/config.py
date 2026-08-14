@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from ipaddress import ip_address
 from pathlib import Path
 from urllib.parse import urlparse
+
+
+_PRIVATE_LAN_RANGES = (
+    (0x0A000000, 0x0AFFFFFF),
+    (0xAC100000, 0xAC1FFFFF),
+    (0xC0A80000, 0xC0A8FFFF),
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +142,17 @@ def _validate_required_credential(name: str, path: Path | None) -> None:
         raise ValueError(f"{name} credential is unavailable")
 
 
+def _private_lan_host(host: str) -> bool:
+    try:
+        address = ip_address(host)
+    except ValueError:
+        return False
+    value = int(address)
+    return address.version == 4 and any(
+        start <= value <= end for start, end in _PRIVATE_LAN_RANGES
+    )
+
+
 def _absolute_url(
     name: str,
     value: str,
@@ -147,12 +166,15 @@ def _absolute_url(
     if parsed.scheme == "https":
         return
     host = (parsed.hostname or "").lower()
-    if allow_host_bridge and host in {
-        "127.0.0.1",
-        "localhost",
-        "host.docker.internal",
-        "host.internal",
-    }:
+    if allow_host_bridge and (
+        host in {
+            "127.0.0.1",
+            "localhost",
+            "host.docker.internal",
+            "host.internal",
+        }
+        or _private_lan_host(host)
+    ):
         return
     if require_https:
         raise ValueError(f"{name} must use HTTPS")
