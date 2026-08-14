@@ -7,10 +7,11 @@ import pytest
 from aiohttp import FormData
 from aiohttp.test_utils import TestClient, TestServer
 
-from jarvis_api.app import create_app
+from jarvis_api.app import REASONING, create_app
 from jarvis_api.audio import AudioFailureStage, AudioFailureSubtype, AudioFormatError
 from jarvis_api.config import Config
 from jarvis_api.models import RenderedAudio
+from jarvis_api.upstreams import N8NReasoningClient, ReasoningResult, UpstreamError
 
 
 ORIGIN = "https://jarvis.example"
@@ -38,9 +39,21 @@ class FakeReasoning:
         self.calls = []
         self.response = response
 
-    async def process(self, text, conversation_id):
-        self.calls.append((text, conversation_id))
-        return self.response
+    async def process(self, text, conversation_id, turn_id):
+        self.calls.append((text, conversation_id, turn_id))
+        return ReasoningResult(spoken_text=self.response)
+
+    async def close(self):
+        return None
+
+
+class FailingReasoning:
+    def __init__(self):
+        self.calls = []
+
+    async def process(self, text, conversation_id, turn_id):
+        self.calls.append((text, conversation_id, turn_id))
+        raise UpstreamError("private upstream detail")
 
     async def close(self):
         return None
@@ -106,6 +119,24 @@ async def create_session(client, key=None):
     return await response.json()
 
 
+def test_n8n_backend_builds_strict_reasoning_client_from_credential_file(tmp_path):
+    credential = tmp_path / "n8n-token"
+    credential.write_text("opaque-test-token")
+    config = api_config(
+        reasoning_backend="n8n",
+        reasoning_url="",
+        reasoning_model="",
+        n8n_webhook_url="http://host.docker.internal:5678/webhook/jarvis",
+        n8n_api_key_file=credential,
+    )
+
+    app = create_app(config, voice_client=FakeVoice(), audio_processor=FakeAudio())
+
+    assert isinstance(app[REASONING], N8NReasoningClient)
+    assert app[REASONING].webhook_url == config.n8n_webhook_url
+    assert app[REASONING].api_key == "opaque-test-token"
+
+
 def mutation_headers(session, key=None):
     return {
         "Origin": ORIGIN,
@@ -113,6 +144,39 @@ def mutation_headers(session, key=None):
         "X-Jarvis-CSRF": session["csrf_token"],
         "Idempotency-Key": key or str(uuid.uuid4()),
     }
+
+
+@pytest.mark.asyncio
+async def test_reasoning_failure_replays_generic_error_without_fallback_or_piper():
+    reasoning = FailingReasoning()
+    client, voice, _, _ = await open_client(reasoning=reasoning)
+    try:
+        session = await create_session(client)
+        key = str(uuid.uuid4())
+        payload = {
+            "session_id": session["session_id"],
+            "turn_id": str(uuid.uuid4()),
+            "input": {"type": "text", "text": "Read the home status"},
+            "response_format": "wav",
+        }
+        first = await client.post(
+            "/api/v1/turns",
+            headers=mutation_headers(session, key),
+            json=payload,
+        )
+        second = await client.post(
+            "/api/v1/turns",
+            headers=mutation_headers(session, key),
+            json=payload,
+        )
+
+        assert first.status == second.status == 502
+        assert await first.json() == await second.json()
+        assert (await second.json())["error"]["code"] == "upstream_unavailable"
+        assert len(reasoning.calls) == 1
+        assert voice.synthesize_calls == []
+    finally:
+        await client.close()
 
 
 @pytest.mark.asyncio
@@ -143,7 +207,9 @@ async def test_health_and_text_turn_use_reasoning_then_return_bounded_audio():
         assert body["transcript"] == "Turn on the kitchen lights"
         assert body["response_text"] == "The kitchen lights are on."
         assert body["audio"]["content_type"] == "audio/wav"
-        assert reasoning.calls == [("Turn on the kitchen lights", session["session_id"])]
+        assert reasoning.calls == [
+            ("Turn on the kitchen lights", session["session_id"], turn_id)
+        ]
         assert voice.synthesize_calls == [
             ("The kitchen lights are on.", "piper:en_US-danny-low")
         ]
@@ -394,10 +460,106 @@ class BlockingReasoning(FakeReasoning):
         super().__init__()
         self.started = asyncio.Event()
 
-    async def process(self, text, conversation_id):
-        self.calls.append((text, conversation_id))
+    async def process(self, text, conversation_id, turn_id):
+        self.calls.append((text, conversation_id, turn_id))
         self.started.set()
         await asyncio.Event().wait()
+
+
+class ReleasableReasoning(FakeReasoning):
+    def __init__(self):
+        super().__init__()
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def process(self, text, conversation_id, turn_id):
+        self.calls.append((text, conversation_id, turn_id))
+        self.started.set()
+        await self.release.wait()
+        return ReasoningResult(spoken_text=self.response)
+
+
+@pytest.mark.asyncio
+async def test_concurrent_idempotent_turns_share_one_authoritative_result():
+    reasoning = ReleasableReasoning()
+    client, voice, _, _ = await open_client(reasoning=reasoning)
+    try:
+        session = await create_session(client)
+        key = str(uuid.uuid4())
+        payload = {
+            "session_id": session["session_id"],
+            "turn_id": str(uuid.uuid4()),
+            "input": {"type": "text", "text": "Read the home status"},
+            "response_format": "wav",
+        }
+        first_task = asyncio.create_task(
+            client.post(
+                "/api/v1/turns",
+                headers=mutation_headers(session, key),
+                json=payload,
+            )
+        )
+        await asyncio.wait_for(reasoning.started.wait(), timeout=1)
+        second_task = asyncio.create_task(
+            client.post(
+                "/api/v1/turns",
+                headers=mutation_headers(session, key),
+                json=payload,
+            )
+        )
+        await asyncio.sleep(0.05)
+        assert not second_task.done()
+        reasoning.release.set()
+
+        first, second = await asyncio.gather(first_task, second_task)
+        assert first.status == second.status == 201
+        assert await first.json() == await second.json()
+        assert len(reasoning.calls) == 1
+        assert len(voice.synthesize_calls) == 1
+    finally:
+        await client.close()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_idempotency_key_reuse_with_different_payload_fails_closed():
+    reasoning = ReleasableReasoning()
+    client, voice, _, _ = await open_client(reasoning=reasoning)
+    try:
+        session = await create_session(client)
+        key = str(uuid.uuid4())
+        first_payload = {
+            "session_id": session["session_id"],
+            "turn_id": str(uuid.uuid4()),
+            "input": {"type": "text", "text": "Read the home status"},
+            "response_format": "wav",
+        }
+        first_task = asyncio.create_task(
+            client.post(
+                "/api/v1/turns",
+                headers=mutation_headers(session, key),
+                json=first_payload,
+            )
+        )
+        await asyncio.wait_for(reasoning.started.wait(), timeout=1)
+        conflicting_payload = {
+            **first_payload,
+            "turn_id": str(uuid.uuid4()),
+            "input": {"type": "text", "text": "Read a different status"},
+        }
+        conflict = await client.post(
+            "/api/v1/turns",
+            headers=mutation_headers(session, key),
+            json=conflicting_payload,
+        )
+        assert conflict.status == 409
+        assert (await conflict.json())["error"]["code"] == "idempotency_conflict"
+        assert len(reasoning.calls) == 1
+        assert voice.synthesize_calls == []
+        reasoning.release.set()
+        assert (await first_task).status == 201
+    finally:
+        reasoning.release.set()
+        await client.close()
 
 
 @pytest.mark.asyncio
