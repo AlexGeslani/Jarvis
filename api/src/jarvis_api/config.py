@@ -11,9 +11,12 @@ class Config:
     allowed_origin: str = "https://jarvis.example"
     stt_url: str = ""
     tts_url: str = ""
+    reasoning_backend: str = "direct"
     reasoning_url: str = ""
     reasoning_model: str = ""
     reasoning_api_key_file: Path | None = None
+    n8n_webhook_url: str = ""
+    n8n_api_key_file: Path | None = None
     piper_voice: str = "piper:en_US-danny-low"
     upstream_timeout_seconds: float = 30.0
     max_payload_bytes: int = 2_000_000
@@ -39,9 +42,12 @@ class Config:
             allowed_origin=os.getenv("JARVIS_ALLOWED_ORIGIN", cls.allowed_origin),
             stt_url=os.getenv("JARVIS_STT_URL", ""),
             tts_url=os.getenv("JARVIS_TTS_URL", ""),
+            reasoning_backend=os.getenv("JARVIS_REASONING_BACKEND", "direct").strip(),
             reasoning_url=os.getenv("JARVIS_REASONING_URL", ""),
             reasoning_model=os.getenv("JARVIS_REASONING_MODEL", ""),
             reasoning_api_key_file=_optional_path("JARVIS_REASONING_API_KEY_FILE"),
+            n8n_webhook_url=os.getenv("JARVIS_N8N_WEBHOOK_URL", ""),
+            n8n_api_key_file=_optional_path("JARVIS_N8N_API_KEY_FILE"),
             piper_voice=os.getenv("JARVIS_PIPER_VOICE", cls.piper_voice),
             upstream_timeout_seconds=_float("JARVIS_UPSTREAM_TIMEOUT_SECONDS", 30.0),
             max_payload_bytes=_int("JARVIS_MAX_PAYLOAD_BYTES", 2_000_000),
@@ -68,11 +74,20 @@ class Config:
         _absolute_url("JARVIS_ALLOWED_ORIGIN", self.allowed_origin, require_https=True)
         _absolute_url("JARVIS_STT_URL", self.stt_url, allow_host_bridge=True)
         _absolute_url("JARVIS_TTS_URL", self.tts_url, allow_host_bridge=True)
-        if not self.reasoning_url or not self.reasoning_model:
-            raise ValueError("JARVIS_REASONING_URL and JARVIS_REASONING_MODEL are both required")
-        _absolute_url("JARVIS_REASONING_URL", self.reasoning_url, allow_host_bridge=True)
-        if self.reasoning_api_key_file is not None and not self.reasoning_api_key_file.is_absolute():
-            raise ValueError("JARVIS_REASONING_API_KEY_FILE must be an absolute path")
+        if self.reasoning_backend not in {"direct", "n8n"}:
+            raise ValueError("JARVIS_REASONING_BACKEND must be direct or n8n")
+        if self.reasoning_backend == "direct":
+            if not self.reasoning_url or not self.reasoning_model:
+                raise ValueError("JARVIS_REASONING_URL and JARVIS_REASONING_MODEL are both required")
+            _absolute_url("JARVIS_REASONING_URL", self.reasoning_url, allow_host_bridge=True)
+            _validate_optional_credential(
+                "JARVIS_REASONING_API_KEY_FILE", self.reasoning_api_key_file
+            )
+        else:
+            if self.reasoning_url or self.reasoning_model or self.reasoning_api_key_file is not None:
+                raise ValueError("Jarvis direct fallback must be unset when n8n is selected")
+            _absolute_url("JARVIS_N8N_WEBHOOK_URL", self.n8n_webhook_url, allow_host_bridge=True)
+            _validate_required_credential("JARVIS_N8N_API_KEY_FILE", self.n8n_api_key_file)
         if self.piper_voice != "piper:en_US-danny-low":
             raise ValueError("JARVIS_PIPER_VOICE must remain piper:en_US-danny-low")
         positive = (
@@ -107,6 +122,16 @@ def _float(name: str, default: float) -> float:
 def _optional_path(name: str) -> Path | None:
     value = os.getenv(name, "").strip()
     return Path(value) if value else None
+
+
+def _validate_optional_credential(name: str, path: Path | None) -> None:
+    if path is not None and not path.is_absolute():
+        raise ValueError(f"{name} must be an absolute path")
+
+
+def _validate_required_credential(name: str, path: Path | None) -> None:
+    if path is None or not path.is_absolute() or not path.is_file():
+        raise ValueError(f"{name} credential is unavailable")
 
 
 def _absolute_url(
