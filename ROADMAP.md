@@ -9,7 +9,7 @@ This roadmap separates **verified current behavior** from **planned work**. It i
 - ⬜ **Planned** — not part of the current product baseline.
 - 🔒 **Security-gated** — requires a separate threat review and explicit release decision.
 
-## Current baseline — core `0.1.8` / watch `0.1.11`
+## Current baseline — core `0.1.8` / watch `0.1.12`
 
 ### Browser and shared API
 
@@ -28,23 +28,23 @@ This roadmap separates **verified current behavior** from **planned work**. It i
 
 - ✅ Zepp OS Device App and phone Side Service targeting the 480 × 480 Active Max profile and API level 4.2.
 - ✅ Eight-second explicit recording, bounded chunk transfer, API relay, response text, MP3 return transfer, playback-state animation, and scoped volume restoration implemented and covered by contracts/unit tests.
-- ✅ Reusable recorder lifecycle, synchronous STOP failure recovery, bounded missing-STOP watchdog, and stale-callback fencing implemented in watch `0.1.11`.
+- ✅ Reusable recorder lifecycle, synchronous STOP failure recovery, bounded missing-STOP watchdog, stale-callback fencing, and the physical-watch-validated native green-animation pattern implemented in watch `0.1.12`.
 - ✅ A prior candidate completed the physical record → phone relay → private API → response playback path.
-- 🟡 Final watch `0.1.11` physical acceptance is pending. The open gate includes repeated turns, microphone permission, audible playback, volume restoration, interruption, back-navigation, relaunch after failure, and network-failure behavior.
+- 🟡 Final watch `0.1.12` physical acceptance is pending. The open gate includes repeated turns, microphone permission, audible playback, volume restoration, interruption, back-navigation, relaunch after failure, and network-failure behavior.
 
 ### Distribution
 
 - ✅ Current browser/watch screenshots and the n8n release architecture are the public review surface.
-- ✅ Watch `0.1.11` builds as an Active Max `.zab`; temporary QR preview generation is qualified for Zepp Developer Mode.
+- ✅ Watch `0.1.12` builds as an Active Max `.zab`; temporary QR preview generation is qualified for Zepp Developer Mode.
 - ⬜ There is no public web demo, GitHub Pages deployment, public API, marketplace release, or distributable operator-configured watch package.
 
 ---
 
-## Milestone 1 — Close the watch `0.1.11` physical gate
+## Milestone 1 — Close the watch `0.1.12` physical gate
 
 **Outcome:** the current watch build has repeatable, evidence-backed acceptance rather than package-only confidence.
 
-- [ ] Run the complete acceptance matrix on a physical Active Max using the exact `0.1.11` artifact.
+- [ ] Run the complete acceptance matrix on a physical Active Max using the exact `0.1.12` artifact.
 - [ ] Confirm first-run microphone permission and a nonempty eight-second-or-shorter recording.
 - [ ] Verify two consecutive turns, phone relay, transcript response, audio transfer, audible playback, and presence-state transitions in one run.
 - [ ] Prove response volume is restored after normal completion, cancellation/error, back-navigation, and teardown.
@@ -130,7 +130,7 @@ For every integration:
 
 **Outcome:** a reviewer or contributor can reproduce the software gates while supplying their own private services.
 
-- [ ] Align product version metadata across the root package, API package, watch workspace, manifest, UI, OpenAPI document, tests, and release notes. The current release intentionally distinguishes core `0.1.8` from watch `0.1.11`.
+- [ ] Align product version metadata across the root package, API package, watch workspace, manifest, UI, OpenAPI document, tests, and release notes. The current release intentionally distinguishes core `0.1.8` from watch `0.1.12`.
 - [ ] Pin and document the supported Node, Python, Zeus CLI, Zepp OS target, `ffmpeg`, and `libopus` ranges.
 - [x] Add a sanitized configuration template for direct or authenticated n8n reasoning without deployment-specific values.
 - [x] Provide a portable local Compose network by default, with an explicit operator-managed external-network option.
