@@ -1,5 +1,5 @@
 import ui from '@zos/ui'
-import { readFileSync } from '@zos/fs'
+import { readFileSync, rmSync } from '@zos/fs'
 import { codec, create, id } from '@zos/media'
 import { clearTimeout, setTimeout } from '@zos/timer'
 import { BasePage } from '@zeppos/zml/base-page'
@@ -12,8 +12,7 @@ import {
 import { createScopedPlaybackVolume } from '../../core/playback-volume'
 
 const MAX_RECORDING_MS = 8000
-const RECORD_FILE = 'jarvis-turn.opus'
-const RECORD_TARGET = `data://${RECORD_FILE}`
+const STOP_COMPLETION_TIMEOUT_MS = 2000
 const CHUNK_CHARACTERS = 6144
 const BACKGROUND = 0x020712
 const CYAN = 0x00e5ff
@@ -25,9 +24,20 @@ let recorder = null
 let player = null
 let responseVolume = null
 let activePage = null
+let abandonedRecordingFile = null
+let recorderStopEventsTrusted = true
 
 function setText(widget, text) {
   if (widget) widget.setProperty(ui.prop.TEXT, text)
+}
+
+function removeRecording(file) {
+  if (!file) return
+  try {
+    rmSync(file)
+  } catch (ignored) {
+    // The recording is already absent or the platform is still finalizing it.
+  }
 }
 
 function describeError(error) {
@@ -46,8 +56,12 @@ Page(
       mode: 'idle',
       recording: false,
       processing: false,
+      recordingFile: null,
+      pendingRecorder: null,
+      uploadStarted: false,
       tick: 0,
       recordTimer: null,
+      stopTimer: null,
       outer: null,
       middle: null,
       core: null,
@@ -113,7 +127,7 @@ Page(
       this.state.action.addEventListener(ui.event.CLICK_UP, () => this.toggleRecording())
       ui.createWidget(ui.widget.TEXT, {
         x: 96, y: 440, w: 288, h: 22,
-        text: 'V0.1.8  •  8 SEC  •  LAN', text_size: 12, color: MUTED,
+        text: 'V0.1.11  •  8 SEC  •  LAN', text_size: 12, color: MUTED,
         align_h: ui.align.CENTER_H, align_v: ui.align.CENTER_V,
       })
 
@@ -123,10 +137,17 @@ Page(
     ensureRecorder() {
       if (recorder) return true
       try {
-        recorder = create(id.RECORDER)
-        recorder.addEventListener(recorder.event.STOP, () => {
-          if (activePage) activePage.onRecordingStopped()
+        const createdRecorder = create(id.RECORDER)
+        createdRecorder.addEventListener(createdRecorder.event.STOP, () => {
+          if (!recorderStopEventsTrusted) return
+          if (activePage && activePage.state.pendingRecorder === createdRecorder) {
+            activePage.onRecordingStopped(createdRecorder)
+          } else {
+            removeRecording(abandonedRecordingFile)
+            abandonedRecordingFile = null
+          }
         })
+        recorder = createdRecorder
         return true
       } catch (error) {
         recorder = null
@@ -207,7 +228,10 @@ Page(
       }
       if (!this.ensureRecorder()) return
       try {
-        recorder.setFormat(codec.OPUS, { target_file: RECORD_TARGET })
+        this.state.recordingFile = `jarvis-turn-${createTurnId()}.opus`
+        this.state.pendingRecorder = recorder
+        this.state.uploadStarted = false
+        recorder.setFormat(codec.OPUS, { target_file: `data://${this.state.recordingFile}` })
         this.state.recording = true
         this.setPresence('listening', 'LISTENING')
         setText(this.state.action, 'STOP & SEND')
@@ -216,6 +240,9 @@ Page(
         this.state.recordTimer = setTimeout(() => this.stopRecording(), MAX_RECORDING_MS)
       } catch (error) {
         this.state.recording = false
+        removeRecording(this.state.recordingFile)
+        this.state.recordingFile = null
+        this.state.pendingRecorder = null
         this.fail('MICROPHONE ERROR')
       }
     },
@@ -225,16 +252,54 @@ Page(
       this.state.recording = false
       if (this.state.recordTimer !== null) clearTimeout(this.state.recordTimer)
       this.state.recordTimer = null
+      this.state.processing = true
       setText(this.state.action, 'PLEASE WAIT')
       this.setPresence('thinking', 'PROCESSING')
-      recorder.stop()
+      try {
+        this.state.stopTimer = setTimeout(
+          () => this.recoverStoppedRecording(recorder),
+          STOP_COMPLETION_TIMEOUT_MS,
+        )
+        recorder.stop()
+      } catch (error) {
+        this.releaseRecordingTurn()
+        this.fail('MICROPHONE ERROR')
+      }
     },
 
-    async onRecordingStopped() {
-      if (this.state.processing) return
-      this.state.processing = true
+    recoverStoppedRecording(sourceRecorder) {
+      if (sourceRecorder !== this.state.pendingRecorder || this.state.uploadStarted) return
+      recorderStopEventsTrusted = false
       try {
-        const content = readFileSync({ path: RECORD_FILE })
+        if (sourceRecorder.getStatus() === sourceRecorder.state.IDLE) {
+          this.onRecordingStopped(sourceRecorder)
+          return
+        }
+      } catch (ignored) {
+        // If recorder state cannot be read, release the turn rather than wedge input.
+      }
+      this.releaseRecordingTurn()
+      this.fail('MICROPHONE ERROR')
+    },
+
+    releaseRecordingTurn(recordingFile = this.state.recordingFile) {
+      if (this.state.stopTimer !== null) clearTimeout(this.state.stopTimer)
+      this.state.stopTimer = null
+      removeRecording(recordingFile)
+      this.state.recordingFile = null
+      this.state.pendingRecorder = null
+      this.state.uploadStarted = false
+      this.state.processing = false
+    },
+
+    async onRecordingStopped(sourceRecorder) {
+      if (sourceRecorder !== this.state.pendingRecorder) return
+      if (this.state.uploadStarted) return
+      this.state.uploadStarted = true
+      this.state.processing = true
+      const recordingFile = this.state.recordingFile
+      try {
+        const content = readFileSync({ path: recordingFile })
         if (!content) throw new Error('recording is empty')
         const bytes = content instanceof Uint8Array ? content : new Uint8Array(content)
         if (bytes.byteLength < 1 || bytes.byteLength > 1_000_000) {
@@ -273,7 +338,7 @@ Page(
       } catch (error) {
         this.fail('REQUEST FAILED')
       } finally {
-        this.state.processing = false
+        this.releaseRecordingTurn(recordingFile)
         setText(this.state.action, 'START VOICE')
       }
     },
@@ -347,16 +412,20 @@ Page(
 
     onDestroy() {
       if (this.state.recordTimer !== null) clearTimeout(this.state.recordTimer)
+      if (this.state.stopTimer !== null) clearTimeout(this.state.stopTimer)
       this.state.recordTimer = null
+      this.state.stopTimer = null
+      activePage = null
+      abandonedRecordingFile = this.state.recordingFile
+      this.state.recordingFile = null
+      this.state.pendingRecorder = null
       if (this.state.recording && recorder) recorder.stop()
       if (player) {
         player.stop()
         if (responseVolume) responseVolume.restore()
       }
-      recorder = null
       player = null
       responseVolume = null
-      activePage = null
     },
   }),
 )

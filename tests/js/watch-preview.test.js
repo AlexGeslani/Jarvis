@@ -29,7 +29,7 @@ test('watch documentation preview mirrors the 480px source geometry and both sta
   assert.match(preview, /data-geometry="104,282,272,34"/)
   assert.match(preview, /data-geometry="74,315,332,46"/)
   assert.match(preview, /data-geometry="112,364,256,70"/)
-  assert.match(preview, /data-geometry="96,440,288,22"[^>]*>V0\.1\.8\s*<span[^>]*>•<\/span>\s*8 SEC\s*<span[^>]*>•<\/span>\s*LAN</)
+  assert.match(preview, /data-geometry="96,440,288,22"[^>]*>V0\.1\.11\s*<span[^>]*>•<\/span>\s*8 SEC\s*<span[^>]*>•<\/span>\s*LAN</)
 
   assert.match(preview, /ACTIVE MAX\s*<span[^>]*>·<\/span>\s*480 × 480/)
   assert.match(preview, /Jarvis watch preview/)

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import base64
+import json
+import re
 from collections import OrderedDict
+from dataclasses import dataclass
 from typing import Any
 
 import aiohttp
@@ -9,6 +12,19 @@ import aiohttp
 
 class UpstreamError(RuntimeError):
     """Safe upstream failure marker; response bodies are deliberately not retained."""
+
+
+@dataclass(frozen=True, slots=True)
+class ToolReceipt:
+    tool: str
+    status: str
+    receipt_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ReasoningResult:
+    spoken_text: str
+    tool_results: tuple[ToolReceipt, ...] = ()
 
 
 class VoiceClient:
@@ -117,7 +133,9 @@ class OpenAIReasoningClient:
             self.session = aiohttp.ClientSession(timeout=self.timeout)
         return self.session
 
-    async def process(self, text: str, conversation_id: str) -> str:
+    async def process(
+        self, text: str, conversation_id: str, turn_id: str = ""
+    ) -> ReasoningResult:
         prior = list(self.history.get(conversation_id, []))
         messages = [
             {"role": "system", "content": self.SYSTEM_PROMPT},
@@ -159,10 +177,128 @@ class OpenAIReasoningClient:
         self.history.move_to_end(conversation_id)
         while len(self.history) > self.max_sessions:
             self.history.popitem(last=False)
-        return answer
+        return ReasoningResult(spoken_text=answer)
 
     async def close(self) -> None:
         self.history.clear()
+        if self._owns_session and self.session is not None:
+            await self.session.close()
+
+
+class N8NReasoningClient:
+    """Strict transcript-only adapter for the Jarvis n8n Agent workflow."""
+
+    _RESPONSE_KEYS = {
+        "schema_version",
+        "session_id",
+        "turn_id",
+        "status",
+        "spoken_text",
+        "tool_results",
+    }
+    _TOOL_RESULT_KEYS = {"tool", "status", "receipt_id"}
+    _ALLOWED_TOOLS = {"get_home_status"}
+    _RECEIPT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
+
+    def __init__(
+        self,
+        *,
+        webhook_url: str,
+        api_key: str,
+        timeout_seconds: float,
+        max_response_chars: int,
+        session: aiohttp.ClientSession | None = None,
+    ) -> None:
+        self.webhook_url = webhook_url
+        self.api_key = api_key
+        self.max_response_chars = max_response_chars
+        self._owns_session = session is None
+        self.session = session
+        self.timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+
+    def _session(self) -> aiohttp.ClientSession:
+        if self.session is None:
+            self.session = aiohttp.ClientSession(timeout=self.timeout)
+        return self.session
+
+    async def process(
+        self, text: str, conversation_id: str, turn_id: str = ""
+    ) -> ReasoningResult:
+        if not turn_id:
+            raise UpstreamError("n8n reasoning request is incomplete")
+        request_payload = {
+            "schema_version": "1",
+            "session_id": conversation_id,
+            "turn_id": turn_id,
+            "transcript": text,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Idempotency-Key": turn_id,
+            "Content-Type": "application/json",
+        }
+        response_limit = max(4096, self.max_response_chars * 8)
+        try:
+            async with self._session().post(
+                self.webhook_url,
+                headers=headers,
+                json=request_payload,
+            ) as response:
+                if response.status < 200 or response.status >= 300:
+                    raise UpstreamError("n8n reasoning unavailable")
+                raw = await response.content.read(response_limit + 1)
+                if len(raw) > response_limit:
+                    raise UpstreamError("n8n reasoning returned an invalid response")
+                data = json.loads(raw)
+        except UpstreamError:
+            raise
+        except (aiohttp.ClientError, TimeoutError, ValueError) as error:
+            raise UpstreamError("n8n reasoning unavailable") from error
+
+        if not self._valid_response(data, conversation_id, turn_id):
+            raise UpstreamError("n8n reasoning returned an invalid response")
+        return ReasoningResult(
+            spoken_text=data["spoken_text"].strip(),
+            tool_results=tuple(
+                ToolReceipt(
+                    tool=result["tool"],
+                    status=result["status"],
+                    receipt_id=result["receipt_id"],
+                )
+                for result in data["tool_results"]
+            ),
+        )
+
+    def _valid_response(self, data: Any, conversation_id: str, turn_id: str) -> bool:
+        if not isinstance(data, dict) or set(data) != self._RESPONSE_KEYS:
+            return False
+        spoken_text = data.get("spoken_text")
+        if (
+            data.get("schema_version") != "1"
+            or data.get("session_id") != conversation_id
+            or data.get("turn_id") != turn_id
+            or data.get("status") != "complete"
+            or not isinstance(spoken_text, str)
+            or not spoken_text.strip()
+            or len(spoken_text) > self.max_response_chars
+        ):
+            return False
+        tool_results = data.get("tool_results")
+        if not isinstance(tool_results, list) or len(tool_results) > 4:
+            return False
+        for result in tool_results:
+            if (
+                not isinstance(result, dict)
+                or set(result) != self._TOOL_RESULT_KEYS
+                or result.get("tool") not in self._ALLOWED_TOOLS
+                or result.get("status") != "succeeded"
+                or not isinstance(result.get("receipt_id"), str)
+                or self._RECEIPT_ID.fullmatch(result["receipt_id"]) is None
+            ):
+                return False
+        return True
+
+    async def close(self) -> None:
         if self._owns_session and self.session is not None:
             await self.session.close()
 
