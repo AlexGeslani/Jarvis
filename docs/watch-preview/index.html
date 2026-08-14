@@ -7,15 +7,17 @@
   <style>
     :root {
       color-scheme: dark;
-      --page: #01070c;
-      --page-glow: #06232c;
-      --surface: #061017;
-      --line: #124553;
-      --watch: #020712;
-      --cyan: #00e5ff;
-      --indigo: #675cff;
-      --pale: #eafcff;
-      --muted: #6f98a6;
+      --page: #010503;
+      --page-glow: #082713;
+      --surface: #03180c;
+      --line: #126632;
+      --watch: #010503;
+      --green: #4dff88;
+      --lime: #a9ff63;
+      --signal: #18c766;
+      --track: #0b3c1f;
+      --pale: #efffdb;
+      --muted: #75a887;
     }
 
     * { box-sizing: border-box; }
@@ -32,9 +34,9 @@
       min-width: 1280px;
       min-height: 900px;
       background:
-        radial-gradient(circle at 38% 34%, rgba(0, 229, 255, 0.075), transparent 31%),
-        radial-gradient(circle at 79% 26%, rgba(103, 92, 255, 0.055), transparent 27%),
-        linear-gradient(145deg, #03131b 0%, var(--page) 54%, #010407 100%);
+        radial-gradient(circle at 38% 34%, rgba(77, 255, 136, 0.075), transparent 31%),
+        radial-gradient(circle at 79% 26%, rgba(169, 255, 99, 0.045), transparent 27%),
+        linear-gradient(145deg, #03140a 0%, var(--page) 54%, #010301 100%);
       color: var(--pale);
       font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -56,14 +58,14 @@
 
     .eyebrow {
       margin: 0 0 12px;
-      color: var(--cyan);
+      color: var(--green);
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.2em;
       line-height: 1;
     }
 
-    .eyebrow span { color: #6da4b1; }
+    .eyebrow span { color: var(--muted); }
 
     h1 {
       margin: 0;
@@ -101,7 +103,7 @@
       box-shadow:
         0 0 0 4px #050b10,
         0 24px 60px rgba(0, 0, 0, 0.58),
-        0 0 52px rgba(0, 229, 255, 0.045);
+        0 0 52px rgba(77, 255, 136, 0.045);
     }
 
     .crown {
@@ -139,24 +141,26 @@
     }
 
     .brand {
-      left: 86px;
-      top: 30px;
-      width: 308px;
-      height: 44px;
+      z-index: 4;
+      left: 100px;
+      top: 34px;
+      width: 280px;
+      height: 38px;
       color: var(--pale);
-      font-size: 27px;
+      font-size: 24px;
       font-weight: 500;
       line-height: 1;
       white-space: nowrap;
     }
 
     .privacy {
+      z-index: 4;
       left: 120px;
-      top: 66px;
+      top: 70px;
       width: 240px;
-      height: 28px;
+      height: 22px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 11px;
       line-height: 1;
       white-space: nowrap;
     }
@@ -167,8 +171,8 @@
       width: 248px;
       height: 248px;
       border-radius: 50%;
-      background: #075d73;
-      box-shadow: 0 0 32px rgba(0, 229, 255, 0.09);
+      background: var(--track);
+      box-shadow: 0 0 32px rgba(77, 255, 136, 0.09);
     }
 
     .ring-outer-cutout {
@@ -186,8 +190,8 @@
       width: 184px;
       height: 184px;
       border-radius: 50%;
-      background: var(--indigo);
-      box-shadow: 0 0 32px rgba(103, 92, 255, 0.14);
+      background: #126632;
+      box-shadow: 0 0 32px rgba(77, 255, 136, 0.14);
     }
 
     .ring-middle-cutout {
@@ -196,8 +200,20 @@
       width: 168px;
       height: 168px;
       border-radius: 50%;
-      background: #061527;
+      background: #03180c;
     }
+
+    .ring-node {
+      z-index: 2;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--track);
+      box-shadow: 0 0 7px rgba(77, 255, 136, 0.25);
+    }
+
+    .ring-node.active { background: var(--green); box-shadow: 0 0 10px rgba(77, 255, 136, 0.8); }
+    .ring-node.signal { background: var(--signal); }
 
     .core {
       left: 191px;
@@ -205,8 +221,8 @@
       width: 98px;
       height: 98px;
       border-radius: 50%;
-      background: #126276;
-      box-shadow: 0 0 35px rgba(0, 229, 255, 0.2);
+      background: var(--green);
+      box-shadow: 0 0 35px rgba(77, 255, 136, 0.25);
     }
 
     .glyph {
@@ -226,7 +242,7 @@
       top: 282px;
       width: 272px;
       height: 34px;
-      color: var(--cyan);
+      color: var(--green);
       font-size: 17px;
       font-weight: 500;
       line-height: 1;
@@ -250,9 +266,9 @@
       top: 364px;
       width: 256px;
       height: 70px;
-      border: 1px solid rgba(0, 229, 255, 0.13);
+      border: 1px solid rgba(77, 255, 136, 0.13);
       border-radius: 35px;
-      background: #063d52;
+      background: #03180c;
       color: var(--pale);
       font-size: 21px;
       font-weight: 600;
@@ -305,9 +321,9 @@
       position: relative;
       width: 60px;
       height: 60px;
-      border: 2px solid var(--cyan);
+      border: 2px solid var(--green);
       border-radius: 50%;
-      box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.08);
+      box-shadow: inset 0 0 20px rgba(77, 255, 136, 0.08);
     }
 
     .mark::before,
@@ -316,12 +332,12 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      border: 1px solid rgba(0, 229, 255, 0.72);
+      border: 1px solid rgba(77, 255, 136, 0.72);
       transform: translate(-50%, -50%) rotate(45deg);
     }
 
     .mark::before { width: 22px; height: 22px; }
-    .mark::after { width: 10px; height: 10px; background: rgba(0, 229, 255, 0.25); }
+    .mark::after { width: 10px; height: 10px; background: rgba(77, 255, 136, 0.25); }
 
     .evidence-card h2 {
       margin: 0 0 10px;
@@ -356,18 +372,30 @@
         <div class="watch-shell">
           <div class="crown" aria-hidden="true"></div>
           <div class="watch-face" data-width="480" data-height="480" role="img" aria-label="Round Jarvis watch interface">
-            <p class="widget brand" data-geometry="86,30,308,44">J A R V I S</p>
-            <p class="widget privacy" data-geometry="120,66,240,28">PRIVATE LOCAL VOICE</p>
+            <p class="widget brand" data-geometry="100,34,280,38">J A R V I S</p>
+            <p class="widget privacy" data-geometry="120,70,240,22">MECHANICAL INTELLIGENCE</p>
             <div class="widget ring-outer" data-geometry="116,94,248,248" aria-hidden="true"></div>
             <div class="widget ring-outer-cutout" data-geometry="124,102,232,232" aria-hidden="true"></div>
             <div class="widget ring-middle" data-geometry="148,126,184,184" aria-hidden="true"></div>
             <div class="widget ring-middle-cutout" data-geometry="156,134,168,168" aria-hidden="true"></div>
+            <i class="widget ring-node active" style="left:236px;top:90px" aria-hidden="true"></i>
+            <i class="widget ring-node signal" style="left:298px;top:107px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:343px;top:152px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:360px;top:214px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:343px;top:276px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:298px;top:321px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:236px;top:338px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:174px;top:321px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:129px;top:276px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:112px;top:214px" aria-hidden="true"></i>
+            <i class="widget ring-node" style="left:129px;top:152px" aria-hidden="true"></i>
+            <i class="widget ring-node signal" style="left:174px;top:107px" aria-hidden="true"></i>
             <div class="widget core" data-geometry="191,169,98,98" aria-hidden="true"></div>
             <div class="widget glyph" data-geometry="185,161,110,114" aria-hidden="true">◇</div>
             <p class="widget status" data-geometry="104,282,272,34" id="watch-status">READY</p>
             <p class="widget response" data-geometry="74,315,332,46" id="watch-response">TAP TO SPEAK</p>
             <div class="widget action" data-geometry="112,364,256,70" id="watch-action">START VOICE</div>
-            <p class="widget footer" data-geometry="96,440,288,22">V0.1.11 <span>•</span> 8 SEC <span>•</span> LAN</p>
+            <p class="widget footer" data-geometry="96,440,288,22">V0.1.12 <span>•</span> 8 SEC <span>•</span> LAN</p>
           </div>
         </div>
         <figcaption id="state-caption">Jarvis ready for an explicit voice turn</figcaption>

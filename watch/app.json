@@ -4,7 +4,7 @@
     "appId": 2026081001,
     "appName": "Jarvis",
     "appType": "app",
-    "version": { "code": 12, "name": "0.1.11" },
+    "version": { "code": 13, "name": "0.1.12" },
     "vender": "Alphatrion",
     "description": "A private LAN voice client for Amazfit Active Max.",
     "icon": "images/app-icon.png"

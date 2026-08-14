@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="248" height="248" viewBox="0 0 248 248" role="img" aria-labelledby="title desc">
+  <title id="title">Jarvis terminal-green app icon</title>
+  <desc id="desc">MECHANICAL CORE with segmented green rings and a luminous diamond center.</desc>
+  <defs>
+    <radialGradient id="background" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#082713"/>
+      <stop offset="0.48" stop-color="#03180c"/>
+      <stop offset="1" stop-color="#010503"/>
+    </radialGradient>
+    <radialGradient id="core" cx="42%" cy="38%" r="66%">
+      <stop offset="0" stop-color="#efffdb"/>
+      <stop offset="0.18" stop-color="#a9ff63"/>
+      <stop offset="0.48" stop-color="#4dff88"/>
+      <stop offset="1" stop-color="#18c766"/>
+    </radialGradient>
+    <filter id="soft-glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="wide-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <rect width="248" height="248" rx="54" fill="url(#background)"/>
+  <circle cx="124" cy="124" r="84" fill="none" stroke="#18c766" stroke-opacity="0.16" stroke-width="20"/>
+  <circle cx="124" cy="124" r="86" fill="none" stroke="#4dff88" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 20" transform="rotate(-12 124 124)" filter="url(#soft-glow)"/>
+  <circle cx="124" cy="124" r="67" fill="none" stroke="#126632" stroke-width="10" stroke-dasharray="18 9" transform="rotate(8 124 124)"/>
+  <circle cx="124" cy="124" r="58" fill="#010503" stroke="#18c766" stroke-opacity="0.55" stroke-width="2"/>
+  <g fill="#4dff88">
+    <circle cx="124" cy="32" r="3"/>
+    <circle cx="216" cy="124" r="3"/>
+    <circle cx="124" cy="216" r="3"/>
+    <circle cx="32" cy="124" r="3"/>
+  </g>
+  <circle cx="124" cy="124" r="31" fill="#4dff88" opacity="0.22" filter="url(#wide-glow)"/>
+  <path d="M124 83 165 124 124 165 83 124Z" fill="none" stroke="#4dff88" stroke-width="3" stroke-opacity="0.72" filter="url(#soft-glow)"/>
+  <path d="M124 99 149 124 124 149 99 124Z" fill="url(#core)" filter="url(#soft-glow)"/>
+  <circle cx="124" cy="124" r="7" fill="#efffdb"/>
+</svg>
