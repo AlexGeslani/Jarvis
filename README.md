@@ -1,22 +1,20 @@
 # Jarvis
 
-**A local-first voice assistant for the browser and Amazfit Active Max.** Jarvis turns an explicit microphone interaction into speech recognition, bounded local reasoning, and a spoken response without sending the interaction through a public web application.
+**A local-first voice assistant for the browser and Amazfit Active Max, now using a strict n8n reasoning workflow.** Jarvis turns an explicit microphone or text interaction into private speech recognition, bounded local reasoning, and a spoken response—without exposing the experience as a public web service.
 
-**Current watch version:** `0.1.8` · **API contract:** `v1` · **Deployment:** private LAN only
+**Core release:** `0.1.8` · **Watch release:** `0.1.11` · **API contract:** `v1` · **Deployment:** private LAN only
 
 > [!IMPORTANT]
-> This repository is not a self-contained cloud service or public demo. A clone requires user-supplied private-LAN speech-to-text, reasoning, and text-to-speech services, a trusted same-origin web/API deployment, and—when using the watch—a paired phone and Amazfit Active Max. No GitHub Pages site or public endpoint is provided.
+> This repository is not a turn-key cloud service or public demo. A working clone requires operator-supplied speech-to-text, text-to-speech, reasoning, HTTPS ingress, and—when using the watch—a paired phone and Amazfit Active Max. No GitHub Pages site, public API, hosted model, or marketplace package is provided.
 
-## Current status
+## Release highlights
 
-| Surface | Verified state |
-|---|---|
-| Browser | The responsive interface and its voice-turn flow have been verified. It provides Hold-to-Talk, explicit half-duplex Open Dialogue, typed requests, turn cancellation, ephemeral transcript display, and response-reactive animation. |
-| Shared API | The `v1` server gate passes for sessions, text and audio turns, audio normalization, cancellation, policy rejection, bounded storage, local reasoning authentication, and WAV/MP3 response delivery. |
-| Active Max | `0.1.8` builds for the 480 × 480 `genevaw` target on Zepp OS API 4.2. An earlier candidate completed the physical watch end-to-end voice path; final physical-device acceptance of `0.1.8` is still pending. |
-| Public availability | None. Jarvis has no live web demo, public API, Pages deployment, or marketplace release. The screenshots below are the public preview. |
-
-See the [roadmap](ROADMAP.md) for the distinction between the current baseline and planned work.
+- **Terminal-green browser cockpit** with a dimensional mechanical intelligence core, truthful module states, responsive controls, and reduced-motion support.
+- **n8n reasoning orchestration** through one authenticated, typed webhook path: validate turn → call private local model → normalize response.
+- **Zero n8n execution retention** for successful, failed, manual, or in-progress executions in the supplied workflow.
+- **Shared browser/watch API** with origin checks, session ownership, idempotency, cancellation, strict media limits, and ephemeral response audio.
+- **Jarvis Watch `0.1.11`** with reusable-recorder lifecycle recovery, bounded STOP-event watchdog, stale-callback fencing, and response-volume restoration.
+- **No tools, Home Assistant, memory service, search, or direct fallback** in the selected n8n path. The current workflow generates concise spoken responses only.
 
 ## Interface
 
@@ -26,13 +24,15 @@ See the [roadmap](ROADMAP.md) for the distinction between the current baseline a
 |---|---|
 | ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | **Explicit voice control.** Tap **Start Voice**, speak for up to eight seconds, then tap again or let the recording stop automatically.<br><br>**Private response path.** The recording travels through the paired phone to the user-operated LAN services; response text and MP3 playback return to the watch.<br><br>**Clear lifecycle.** The presence ring and status label distinguish ready, listening, processing, speaking, and error states. |
 
-This is a browser-rendered, source-faithful documentation preview; the physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
+This is a browser-rendered, source-faithful documentation preview. The physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
 
 ### Browser
 
-| Ready for an explicit voice turn | Completed response with transcript and playback state |
+| Ready cockpit | Completed private turn |
 |---|---|
-| ![Jarvis browser interface ready for Hold-to-Talk or Open Dialogue on the private local link](docs/screenshots/jarvis-browser-ready.png) | ![Jarvis browser interface showing a completed local conversation and spoken response state](docs/screenshots/jarvis-browser-response.png) |
+| ![Terminal-green Jarvis browser cockpit ready for Hold-to-Talk, Open Dialogue, or typed input](docs/screenshots/jarvis-browser-ready.png) | ![Jarvis browser cockpit showing a synthetic release-check conversation and completed response](docs/screenshots/jarvis-browser-response.png) |
+
+The live cockpit prioritizes the mechanical intelligence core while keeping the command surface and conversation state visible. On small screens, primary voice and text controls move ahead of conversation history to minimize scrolling.
 
 ## What works today
 
@@ -40,76 +40,80 @@ This is a browser-rendered, source-faithful documentation preview; the physical 
 
 - **Hold-to-Talk** with pointer, <kbd>Space</kbd>, or <kbd>Enter</kbd>; release sends the recording.
 - **Open Dialogue**, explicitly enabled by the user, with local voice-activity detection.
-- **Half-duplex conversation:** microphone capture pauses while a request is processed or Jarvis is speaking, preventing the assistant from listening to its own response.
-- Text input, bounded on-screen conversation history, and cancellation of the current turn.
-- A canvas-based presence visualization with idle, listening, processing, speaking, and error states.
-- Audio-reactive response animation and a reduced-motion mode.
-- A three-minute silence timeout for Open Dialogue and a 12-second maximum browser utterance.
+- **Half-duplex conversation:** capture pauses while a request is processed or Jarvis is speaking.
+- Typed requests, bounded on-screen conversation history, turn cancellation, and response playback.
+- Mechanical canvas visualization for idle, listening, processing, speaking, and error states.
+- Responsive command-first mobile layout and `prefers-reduced-motion` support.
+- Three-minute Open Dialogue silence timeout and 12-second maximum browser utterance.
 
 ### Amazfit Active Max
 
-- Zepp OS Device App plus phone Side Service, targeting the round 480 × 480 Active Max profile.
+- Zepp OS Device App plus phone Side Service for the round 480 × 480 `genevaw` target.
 - Tap-to-start/tap-to-stop OPUS recording with an eight-second maximum.
-- Bounded, chunked transfer from watch to phone, then relay to the same private `v1` API used by the browser.
-- MP3 response transfer back to the watch, on-watch playback, response text, and low-power state animation.
-- Response-only volume attenuation to 85% of the current watch volume, followed by restoration on completion or teardown.
+- Bounded, chunked transfer from watch to phone, then relay to the same private `v1` API.
+- MP3 response transfer, on-watch playback, response text, and low-power state animation.
+- Response-only volume attenuation to 85% of the current watch volume, followed by restoration.
+- Reusable recorder with recovery when `stop()` throws or Zepp omits/delays its STOP event.
 - Microphone-only app permission in the current manifest.
 
-### Voice pipeline and API
+### Voice pipeline and n8n
 
-- Browser WebM/Opus, watch OPUS, and WAV inputs normalized to mono 16 kHz WAV before transcription.
-- Whisper-compatible private-LAN speech recognition.
-- Bounded, non-tool local reasoning through an OpenAI-compatible endpoint; optional Bearer authentication is loaded server-side from a file rather than embedded in either client.
-- Piper speech synthesis with the pinned `en_US-danny-low` voice selector.
-- WAV output for the browser and MP3 output for the watch.
-- A versioned session/turn API with idempotency, cancellation, ownership checks, concurrency and rate limits, and bounded ephemeral audio storage.
+- Browser WebM/Opus, watch OPUS, and WAV input normalized to mono 16 kHz WAV.
+- Whisper-compatible private speech recognition and Piper synthesis with `en_US-danny-low`.
+- Authenticated API-to-n8n transport with exact request keys, bounded identifiers, idempotency, and response-size limits.
+- A four-node n8n workflow: authenticated webhook, strict turn validation, private model call, and typed response normalization.
+- Exact response-envelope validation at the Jarvis API before speech synthesis.
+- WAV output for browsers and MP3 output for the watch.
+- Sanitized workflow artifact at [`n8n/Jarvis Watch & Web.workflow.json`](n8n/Jarvis%20Watch%20%26%20Web.workflow.json).
 
 ## Architecture
 
-![Architecture diagram showing browser and Active Max clients using a shared private-LAN API for speech recognition, local reasoning, and speech synthesis](docs/architecture/jarvis-architecture.svg)
+![Jarvis architecture showing browser and Active Max clients using a private Jarvis API, Whisper, an authenticated zero-retention n8n workflow, a private local model, and Piper](docs/architecture/jarvis-architecture.svg)
 
 A voice turn follows one controlled path:
 
-1. The browser records directly, or the watch records OPUS and transfers it through its paired phone.
-2. The client creates a short-lived session and submits the turn to the private `v1` API.
-3. The API validates origin, session ownership, request schema, replay key, payload size, duration, and policy.
-4. Audio is normalized and sent to the user-operated speech-recognition service.
-5. The transcript is sent to the authenticated local reasoning service with bounded in-memory conversation context and no tool access.
-6. The answer is synthesized with Piper, converted to the requested format, and made available only to the owning session.
-7. The browser or watch plays the response and returns to an idle state.
+1. The browser records directly, or the watch records OPUS and transfers it through the paired Zepp phone service.
+2. The client creates a short-lived session and submits the turn through private same-origin HTTPS.
+3. The Jarvis API verifies origin, session ownership, replay key, request schema, payload size, duration, concurrency, rate, and policy.
+4. Audio is normalized and transcribed by the operator's private speech-recognition service.
+5. The API sends only the versioned session ID, turn ID, and transcript to an authenticated n8n webhook.
+6. n8n validates the exact contract, calls the configured private local model, and emits a normalized response with execution retention disabled.
+7. The API independently validates that response, synthesizes speech with Piper, scopes the resulting audio to the owning session, and returns text plus audio.
+8. The browser or watch plays the response and returns to standby.
 
-Both clients share the same server-side policy and media path; the watch is not given a privileged device API.
+Both clients share the same server-side policy and media path. The watch has no privileged API, and n8n is not used for realtime audio transport.
 
 ## Privacy and security model
 
 Jarvis is designed for a trusted private network, not anonymous Internet exposure.
 
-- **Local reachability:** there is no public route, hosted demo, external analytics integration, or public credential flow.
-- **Explicit listening:** browser voice capture starts only while Hold-to-Talk is pressed or after Open Dialogue is deliberately enabled; the watch starts recording only from its on-screen control.
-- **Ephemeral server state:** sessions, bounded conversation context, transcripts, and response audio live in memory and expire. API audio normalization uses temporary directories that are removed after processing. The watch currently reuses one device-local recording file; explicit cleanup verification is tracked in the roadmap.
-- **Client isolation:** the browser uses a restrictive Content Security Policy, same-origin API calls, no-referrer behavior, and no third-party script or asset origins.
-- **Request authorization:** short-lived session IDs and session-bound CSRF tokens protect turns and audio retrieval. Mutations require idempotency keys, and stale or cross-session results are rejected.
-- **Fail-closed limits:** payload, audio duration, text length, response length, active-turn count, concurrency, rate, session count, and ephemeral audio storage are bounded.
-- **Policy before reasoning:** high-risk physical, security, purchase, and irreversible intents are rejected before the conversation backend or speech synthesizer is called.
-- **Credential boundary:** reasoning credentials stay on the API host and can be read from a local file. They are not shipped in browser or watch bundles.
-- **Hardened containers:** the included services run as non-root users with read-only filesystems, dropped capabilities, no new privileges, bounded temporary storage, and no published host ports.
-- **Safe errors:** client responses and routine failure logs avoid upstream response bodies, credentials, transcripts, audio, stack traces, and local filesystem details.
+- **Local reachability:** no public route, hosted demo, analytics integration, or client credential flow.
+- **Explicit listening:** browser capture requires Hold-to-Talk or deliberate Open Dialogue; watch recording begins only from its on-screen control.
+- **Ephemeral server state:** sessions, transcripts, bounded turn state, and response audio expire; audio normalization uses temporary directories removed after processing.
+- **Zero n8n execution retention:** the supplied workflow disables successful, failed, manual, and progress data retention.
+- **Client isolation:** restrictive Content Security Policy, same-origin API calls, no-referrer behavior, and no third-party scripts or assets.
+- **Request authorization:** short-lived session IDs, session-bound CSRF tokens, idempotency keys, and ownership checks.
+- **Fail-closed contracts:** malformed n8n requests or responses, unknown keys, mismatched IDs, oversized text, and unavailable services reject the turn.
+- **Policy before reasoning:** high-risk physical, security, purchase, and irreversible intents are rejected before the reasoning workflow or synthesizer.
+- **Credential boundary:** n8n and model credentials are server-side file mounts or n8n credentials; they are not shipped in browser/watch bundles or the sanitized workflow.
+- **Hardened containers:** non-root users, read-only filesystems, dropped capabilities, no-new-privileges, bounded temporary storage, and no published host ports.
+- **Safe errors:** routine client errors and logs omit upstream bodies, credentials, transcripts, audio, and local filesystem details.
 
-These controls do **not** make the current build suitable for public exposure. Account authentication, device credential issuance/revocation, and a public-ingress security review remain future gates.
+These controls do **not** make the current build safe for direct Internet exposure. Account authentication, device credential issuance/revocation, and a public-ingress security review remain separate future gates.
 
 ## Prerequisites
 
-A working installation needs more than this source tree:
+- Node.js 20 and npm.
+- Python `3.11.x` (`>=3.11,<3.12`).
+- `ffmpeg`, `ffprobe`, and `libopus` for the API runtime.
+- Private speech-to-text and text-to-speech HTTP endpoints compatible with the source contracts.
+- Either:
+  - an authenticated n8n webhook plus private OpenAI-compatible model configured in n8n; or
+  - the supported direct private OpenAI-compatible backend for non-n8n deployments.
+- A trusted HTTPS origin serving `web/` and routing same-origin `/api/v1` requests to the API.
+- For watch use: Zeus CLI, Zepp mobile app Developer Mode, a paired Amazfit Active Max, and phone-to-API reachability on the same private network.
 
-- Node.js and npm.
-- Python `3.11.x` (the supported range is `>=3.11,<3.12`).
-- `ffmpeg`, `ffprobe`, and `libopus` available to the API runtime.
-- Private speech-to-text and text-to-speech HTTP endpoints compatible with the request/response shapes in the source.
-- A private OpenAI-compatible reasoning endpoint, model identifier, and optional server-side API-key file.
-- A trusted HTTPS origin that serves the web client and routes `/api/v1` to the API on the same origin. Browser microphone access requires a secure context.
-- For watch use: the official Zepp OS Zeus CLI, the Zepp mobile app in Developer Mode, a paired Amazfit Active Max, and phone-to-API reachability over the same private network.
-
-The checked-in Compose file is deployment-specific: it expects an existing external container network and intentionally publishes no host ports. Review and adapt its network and reverse-proxy wiring for your environment instead of treating `docker compose up` as a portable one-command install.
+The included Compose file intentionally publishes no host ports. It supports a local named network by default and can join an operator-managed external network through environment configuration.
 
 ## Local setup
 
@@ -119,13 +123,10 @@ The checked-in Compose file is deployment-specific: it expects an existing exter
 npm ci
 ```
 
-The root package provides the Node test commands and the watch workspace. The Zeus CLI is an external prerequisite and is not installed by `npm ci`.
-
 ### 2. Create the API environment
 
 ```bash
 cd api
-python3.11 --version
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -133,20 +134,21 @@ python -m pip install -e '.[test]'
 cd ..
 ```
 
-Install `ffmpeg`/`ffprobe` and `libopus` through your operating system's package manager if they are not already available.
-
 ### 3. Configure private upstreams
 
-Copy [`.env.example`](.env.example) to a local, untracked environment file and fill in:
+Copy [`.env.example`](.env.example) to an untracked environment file.
 
-- private STT and TTS endpoint URLs;
-- the reasoning base URL and model identifier;
-- `JARVIS_REASONING_API_KEY_FILE` when the reasoning endpoint requires Bearer authentication;
-- the exact HTTPS browser origin;
-- the pinned Piper selector `piper:en_US-danny-low`;
-- any limits you intentionally want to override.
+For the n8n path:
 
-Do not commit credentials, private hostnames, device preview URLs, or watch pairing material. The configuration validator rejects incomplete reasoning configuration, non-HTTPS non-loopback upstreams, relative credential-file paths, invalid limits, and a different Piper voice selector.
+```text
+JARVIS_REASONING_BACKEND=n8n
+JARVIS_N8N_WEBHOOK_URL=<private authenticated webhook URL>
+JARVIS_N8N_API_KEY_FILE=<absolute path to a mode-0600 credential file>
+```
+
+Also set the private STT/TTS URLs, exact HTTPS browser origin, and `JARVIS_PIPER_VOICE=piper:en_US-danny-low`. Leave direct reasoning URL/model/key values unset when n8n is selected; configuration fails closed if both paths are mixed.
+
+The checked-in n8n workflow is sanitized. Replace its placeholder model URL, model identifier, and credential references inside your n8n environment before import or activation. Do not commit the resulting runtime workflow export.
 
 ### 4. Run the API and web client
 
@@ -158,9 +160,7 @@ source .venv/bin/activate
 jarvis-api
 ```
 
-Serve `web/` from your trusted HTTPS origin and reverse-proxy same-origin `/api/` requests to the API. The production-style web container already contains this static-serving and API-proxy behavior, but the repository intentionally leaves private ingress and external network setup to the operator.
-
-The browser creates its session automatically. A healthy API returns:
+Serve `web/` from the trusted HTTPS origin and reverse-proxy `/api/` to the API. A healthy API returns:
 
 ```json
 {"status":"ready","api_version":"v1"}
@@ -170,90 +170,81 @@ from `GET /api/v1/health`.
 
 ## Build and test
 
-Run the repository's JavaScript contract and unit tests:
-
 ```bash
 npm test
-```
-
-Run the API suite from the repository root (several media tests use root-relative fixtures):
-
-```bash
-api/.venv/bin/pytest -c api/pyproject.toml api/tests
-```
-
-Validate the container definition without starting services:
-
-```bash
+npm run test:api
+npm run validate:publication
+npm run public-safety
 docker compose config
 ```
 
-Build the Active Max package after installing and authenticating the official Zeus CLI:
+Or run the complete repository gate:
+
+```bash
+npm run verify
+```
+
+Build the Active Max package after installing and authenticating Zeus CLI:
 
 ```bash
 npm run build:watch
 ```
 
-The API tests exercise real `ffmpeg`/`ffprobe` conversions and real `libopus` packet decoding when those system dependencies are present. The Node tests verify browser security/accessibility contracts, half-duplex voice-state logic, watch transfer bounds, Active Max metadata, response-volume restoration, and private container configuration.
+The test suites exercise JavaScript contracts, Python API behavior, real media conversion/decoding when system dependencies are available, n8n adapter and workflow schemas, publication links/assets, and secret-safe release boundaries.
 
 ## Install on Amazfit Active Max
 
 The supported development path is source → Zeus preview → QR code → Zepp mobile app → paired watch.
 
-1. Copy `watch/.env.local.example` to `watch/.env.local`, set `JARVIS_WATCH_API_ORIGIN` to an HTTP(S) origin that **your phone** can reach, and keep the local file mode `0600`. The origin must not contain credentials, a path, query, or fragment.
-2. Do not commit the private origin. The local override and generated `watch/app-side/api-config.js` are ignored; the build generator writes the endpoint without printing it. Without an override, clean-clone generation deterministically uses the loopback-only safe example, which is not phone-reachable.
-3. Confirm [`watch/app.json`](watch/app.json) still targets `genevaw`, design width `480`, and Zepp OS API `4.2`.
-4. Build from the repository root with `npm run build:watch`.
-5. From `watch/`, run:
+1. Copy `watch/.env.local.example` to `watch/.env.local` and set a phone-reachable private API origin. Keep the file mode `0600`.
+2. Run `npm run build:watch` from the repository root.
+3. From `watch/`, run `zeus preview --target "Amazfit Active Max"`.
+4. In the Zepp app, enable Developer Mode through **Profile → Settings → About → tap the Zepp icon seven times**.
+5. Use **Profile → Settings → Developer Mode → Scan** and scan the temporary preview QR from a second screen.
+6. Validate repeated voice turns, failure recovery, volume restoration, back/close behavior, and relaunch on the physical watch.
 
-   ```bash
-   zeus preview --target "Amazfit Active Max"
-   ```
-
-6. In the Zepp mobile app, enable Developer Mode through **Profile → Settings → About → tap the Zepp icon seven times**. Then use **Profile → Settings → Developer Mode → Scan**.
-7. Display the preview QR code on a second screen and scan it from the phone. Preview QR codes are temporary credentials; do not publish or share them.
-8. Complete the physical acceptance path: launch, grant microphone access, record, transfer, receive and hear the response, verify volume restoration, interrupt/back out, relaunch, and test a network failure.
-
-A successful build or QR install is not physical-device acceptance. The checked-in `0.1.8` artifact has passed the server gate, but its final Active Max acceptance sequence remains open.
+Preview QR codes are temporary credentials. Do not publish or commit them. A successful package build is not the same as physical-device acceptance.
 
 ## Current limitations
 
-- No public web demo, public API, GitHub Pages deployment, or marketplace package.
-- A clone cannot answer requests until the operator supplies and secures the STT, reasoning, and TTS services.
-- The current watch Side Service needs an operator-specific private API origin at build time.
-- Open Dialogue is explicit, browser-only, half-duplex, and energy-threshold based; it is not wake-word listening or full-duplex streaming.
-- The watch starts recording from the on-screen button; physical-button activation is planned, not implemented.
-- Current reasoning is deliberately non-tool. Home Assistant is not integrated; it remains explicitly future roadmap work.
-- Sessions and conversation context are process-local and ephemeral; restarting the API clears them.
-- The present local build does not issue or revoke per-device credentials and must not be exposed directly to the Internet.
-- Final physical-watch acceptance for `0.1.8`, including failure and lifecycle cases, is pending.
+- No public web demo, API, GitHub Pages deployment, or marketplace package.
+- A clone cannot answer until the operator supplies and secures STT, reasoning, n8n (when selected), and TTS services.
+- The watch Side Service needs an operator-specific private API origin at build time.
+- Open Dialogue is explicit, browser-only, half-duplex, and energy-threshold based—not wake-word listening or full-duplex streaming.
+- Watch capture begins from the on-screen button; physical-button activation is not implemented.
+- The current n8n release has no tools, Home Assistant, memory service, search, or direct fallback in the selected path.
+- Sessions and conversation state are process-local and ephemeral; restarting the API clears them.
+- The local build does not issue or revoke per-device credentials and must not be exposed directly to the Internet.
+- Browser, automated contract, package, and physical-device checks are distinct evidence levels; the physical Active Max remains authoritative.
 
 ## Project structure
 
 ```text
 .
-├── api/                 aiohttp API, media pipeline, policy, storage, and Python tests
+├── api/                 aiohttp API, media pipeline, n8n adapter, and Python tests
+├── contracts/n8n/v1/    versioned n8n request and response schemas
 ├── docs/
-│   ├── architecture/    product architecture diagram
+│   ├── architecture/    current n8n-based release diagram
 │   ├── screenshots/     browser and watch documentation states
 │   ├── watch-preview/   deterministic source-faithful watch renderer
 │   └── openapi.yaml     shared v1 client contract
-├── tests/js/            browser, watch, protocol, and container contract tests
-├── watch/               Zepp OS Device App, phone Side Service, manifest, and build output
-├── web/                 static browser client and hardened web-server configuration
-├── compose.yaml         private, non-published container deployment definition
-└── ROADMAP.md           current baseline and planned milestones
+├── n8n/                 sanitized zero-retention reasoning workflow
+├── tests/js/            browser, watch, protocol, metadata, and container tests
+├── watch/               Zepp OS Device App, phone Side Service, and manifest
+├── web/                 responsive browser cockpit and hardened web container
+├── compose.yaml         private, non-published container deployment
+└── ROADMAP.md           current baseline and planned work
 ```
 
 ## Contributing
 
 Changes should preserve the shared API boundary and keep product claims tied to executable or physical-device evidence.
 
-- Add or update tests with behavior changes; run both the Node and Python suites.
-- Keep watch target, version label, package artifact, and version assertions synchronized.
-- Never commit credentials, private network coordinates, QR/session URLs, audio, or transcripts.
-- Treat browser verification, simulator verification, package build, and physical-watch acceptance as different evidence levels.
-- Keep new integrations typed, allowlisted, bounded, and server-authorized; clients and transcripts must not choose arbitrary tools or URLs.
+- Add or update tests with behavior changes; run JavaScript, Python, publication, and public-safety gates.
+- Keep watch version, package metadata, preview footer, screenshot, and assertions synchronized.
+- Never commit credentials, private network coordinates, preview QR/session URLs, audio, or transcripts.
+- Keep n8n requests and responses versioned, exact, bounded, authenticated, and independently validated by the API.
+- Treat browser verification, documentation preview, package build, and physical-watch acceptance as distinct evidence levels.
 - Update [ROADMAP.md](ROADMAP.md) when work moves between planned, in progress, and verified.
 
-<!-- Maintainers: when behavior or release metadata changes, update the manifest/version assertions, README status and limitations, architecture/docs, and screenshots together. -->
+<!-- Maintainers: when behavior or release metadata changes, update manifest/version assertions, README status and limitations, architecture/docs, and screenshots together. -->

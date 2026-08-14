@@ -2,7 +2,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
 
-from jarvis_api.upstreams import OpenAIReasoningClient, VoiceClient
+from jarvis_api.upstreams import OpenAIReasoningClient, ReasoningResult, VoiceClient
 
 
 @pytest.mark.asyncio
@@ -65,8 +65,8 @@ async def test_local_reasoning_keeps_bounded_session_context_and_disables_thinki
         max_history_messages=4,
     )
     try:
-        assert await client.process("First", "session-one") == "Reply 1."
-        assert await client.process("Second", "session-one") == "Reply 2."
+        assert await client.process("First", "session-one") == ReasoningResult("Reply 1.")
+        assert await client.process("Second", "session-one") == ReasoningResult("Reply 2.")
         second = requests[1]
         assert second["model"] == "local-test-model"
         assert second["chat_template_kwargs"] == {"enable_thinking": False}

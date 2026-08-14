@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#030711">
+  <meta name="theme-color" content="#020704">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; media-src 'self' blob:; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
   <meta name="referrer" content="no-referrer">
   <title>Jarvis</title>
@@ -12,41 +12,106 @@
 </head>
 <body>
   <main class="experience" aria-labelledby="jarvis-title">
-    <canvas id="presence" aria-label="Jarvis presence visualization: idle"></canvas>
     <div class="vignette" aria-hidden="true"></div>
     <div class="scanline" aria-hidden="true"></div>
 
-    <header class="identity">
-      <p class="eyebrow">PRIVATE SYSTEM · LOCAL LINK</p>
-      <h1 id="jarvis-title">JARVIS</h1>
-      <p id="status" class="status" role="status" aria-live="polite">Establishing secure local session</p>
-    </header>
+    <aside class="module-rail panel" aria-label="Jarvis modules">
+      <header class="identity">
+        <p class="eyebrow">PRIVATE SYSTEM · LOCAL LINK</p>
+        <h1 id="jarvis-title">JARVIS</h1>
+        <p id="status" class="status" role="status" aria-live="polite">Establishing secure local session</p>
+      </header>
 
-    <section class="presence-label" aria-hidden="true">
-      <span class="coordinate">JARVIS // 01</span>
-      <span id="state-label" class="state-label">STANDBY</span>
-      <span class="coordinate">VOICE CORE</span>
+      <nav class="module-nav" aria-label="Platform roadmap">
+        <p class="rail-section-label">Command center</p>
+        <ul>
+          <li class="module-item is-current"><span class="module-glyph" aria-hidden="true">◉</span><span>Dashboard</span><span class="module-tag active">ACTIVE</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">▤</span><span>Conversations</span><span class="module-tag active">ACTIVE</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">◇</span><span>Memory</span><span class="module-tag tbd">TBD</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">◎</span><span>Systems</span><span class="module-tag planned">PLANNED</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">⌘</span><span>Tools</span><span class="module-tag planned">PLANNED</span></li>
+        </ul>
+        <p class="rail-section-label future-label">Evolution roadmap</p>
+        <ul class="future-modules">
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">△</span><span>Agents</span><span class="module-tag future">FUTURE</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">◌</span><span>Automations</span><span class="module-tag future">FUTURE</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">⌁</span><span>Scripts</span><span class="module-tag tbd">TBD</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">▥</span><span>Analytics</span><span class="module-tag tbd">TBD</span></li>
+          <li class="module-item"><span class="module-glyph" aria-hidden="true">⬡</span><span>Marketplace</span><span class="module-tag future">FUTURE</span></li>
+        </ul>
+      </nav>
+
+      <section class="rail-status" aria-labelledby="rail-status-title">
+        <div class="section-heading">
+          <h2 id="rail-status-title">System status</h2>
+          <span class="status-dot" aria-hidden="true"></span>
+        </div>
+        <dl class="status-list">
+          <div><dt>Core</dt><dd id="core-status">INITIALIZING</dd></div>
+          <div><dt>Network</dt><dd id="network-status">CHECKING</dd></div>
+          <div><dt>Voice</dt><dd id="voice-status">READY</dd></div>
+          <div><dt>Memory</dt><dd id="memory-status">EPHEMERAL</dd></div>
+        </dl>
+      </section>
+
+      <div class="rail-signature" aria-hidden="true">
+        <span>JARVIS // 01</span>
+        <span>VOICE CORE</span>
+        <strong>STANDBY</strong>
+      </div>
+    </aside>
+
+    <section class="core-panel panel" aria-labelledby="core-title">
+      <header class="core-header">
+        <div>
+          <p class="eyebrow">PRIVATE SYSTEM · LOCAL LINK</p>
+          <h2 id="core-title">Intelligence core</h2>
+        </div>
+        <span class="secure-mark">LOCAL PROCESSING · PRIVATE · SECURE</span>
+      </header>
+
+      <div class="core-stage">
+        <canvas id="presence" aria-label="Jarvis presence visualization: idle"></canvas>
+        <div class="core-grid" aria-hidden="true"></div>
+        <div class="core-radar" aria-hidden="true"></div>
+        <div class="core-crosshair" aria-hidden="true"></div>
+        <div class="core-metric metric-nw" aria-hidden="true"><span>CORE SYNC</span><strong>LOCAL</strong><i></i></div>
+        <div class="core-metric metric-ne" aria-hidden="true"><span>NETWORK</span><strong>SECURE</strong><i></i></div>
+        <div class="core-metric metric-sw" aria-hidden="true"><span>VOICE CORE</span><strong>READY</strong><i></i></div>
+        <div class="core-metric metric-se" aria-hidden="true"><span>MEMORY</span><strong>EPHEMERAL</strong><i></i></div>
+        <section class="presence-label" aria-hidden="true">
+          <span class="coordinate">JARVIS // 01</span>
+          <span id="state-label" class="state-label">STANDBY</span>
+          <span class="coordinate">VOICE CORE</span>
+        </section>
+      </div>
     </section>
 
-    <section class="conversation" aria-labelledby="transcript-title">
+    <section class="conversation panel" aria-labelledby="transcript-title">
       <div class="conversation-heading">
         <h2 id="transcript-title">Conversation</h2>
-        <span>EPHEMERAL</span>
+        <span class="ephemeral-mark">EPHEMERAL <i aria-hidden="true">◇</i></span>
       </div>
       <ol id="transcript" class="transcript" aria-live="polite" aria-label="Conversation transcript">
         <li class="system-line">Ready when you are.</li>
       </ol>
+      <div class="conversation-footer" aria-hidden="true">
+        <div><span>JARVIS // 01</span><strong id="conversation-state">STANDBY</strong></div>
+        <div class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
     </section>
 
-    <section class="command" aria-label="Talk to Jarvis">
+    <section class="command panel" aria-label="Talk to Jarvis">
       <div class="voice-controls">
         <button id="dialogue" class="dialogue" type="button" aria-pressed="false" aria-describedby="dialogue-hint">
           <span class="dialogue-dot" aria-hidden="true"></span>
           <span id="dialogue-label">Open dialogue</span>
         </button>
         <button id="talk" class="talk" type="button" aria-describedby="talk-hint">
+          <span class="talk-wave left" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
           <span class="talk-mark" aria-hidden="true"></span>
           <span id="talk-label">Hold to talk</span>
+          <span class="talk-wave right" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         </button>
       </div>
       <span id="dialogue-hint" class="visually-hidden">Turn on local voice activity detection for hands-free conversation. Microphone audio is sent only when speech is detected.</span>
@@ -59,13 +124,12 @@
       </form>
 
       <button id="cancel" class="cancel" type="button" disabled>Cancel active turn</button>
+      <footer class="privacy">
+        <span>LAN ONLY</span>
+        <span>NO RETENTION</span>
+        <span id="connection">CONNECTING</span>
+      </footer>
     </section>
-
-    <footer class="privacy">
-      <span>LAN ONLY</span>
-      <span>NO RETENTION</span>
-      <span id="connection">CONNECTING</span>
-    </footer>
   </main>
   <script type="module" src="./app.js"></script>
 </body>

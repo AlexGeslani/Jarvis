@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const RELEASE = '0.1.8'
+const WATCH_RELEASE = '0.1.11'
 
 
 test('release metadata is aligned to 0.1.8 and the tested Python runtime', async () => {
@@ -19,9 +20,9 @@ test('release metadata is aligned to 0.1.8 and the tested Python runtime', async
   assert.equal(root.version, RELEASE)
   assert.equal(lock.version, RELEASE)
   assert.equal(lock.packages[''].version, RELEASE)
-  assert.equal(lock.packages.watch.version, RELEASE)
-  assert.equal(watch.version, RELEASE)
-  assert.equal(manifest.app.version.name, RELEASE)
+  assert.equal(lock.packages.watch.version, WATCH_RELEASE)
+  assert.equal(watch.version, WATCH_RELEASE)
+  assert.equal(manifest.app.version.name, WATCH_RELEASE)
   assert.equal(manifest.app.vender, 'Alphatrion')
   assert.match(pyproject, /^version = "0\.1\.8"$/m)
   assert.match(pyproject, /^requires-python = ">=3\.11,<3\.12"$/m)

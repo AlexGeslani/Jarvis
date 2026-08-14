@@ -26,7 +26,13 @@ from .config import Config
 from .models import RenderedAudio, SessionRecord, TurnRecord
 from .policy import UnsafeIntentError, enforce_safe_intent
 from .storage import EphemeralStore, FixedWindowRateLimiter
-from .upstreams import OpenAIReasoningClient, UpstreamError, VoiceClient as UpstreamVoiceClient
+from .upstreams import (
+    N8NReasoningClient,
+    OpenAIReasoningClient,
+    ReasoningResult,
+    UpstreamError,
+    VoiceClient as UpstreamVoiceClient,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -41,7 +47,9 @@ class VoiceClient(Protocol):
 
 
 class ReasoningClient(Protocol):
-    async def process(self, text: str, conversation_id: str) -> str: ...
+    async def process(
+        self, text: str, conversation_id: str, turn_id: str
+    ) -> ReasoningResult: ...
 
     async def close(self) -> None: ...
 
@@ -61,6 +69,12 @@ class ParsedTurn:
     audio: bytes
     audio_format: str
     response_format: str
+
+
+@dataclass(frozen=True, slots=True)
+class PendingTurn:
+    fingerprint: str
+    completed: asyncio.Future[bool]
 
 
 class APIError(Exception):
@@ -86,6 +100,7 @@ SEMAPHORE = web.AppKey("turn_semaphore", asyncio.Semaphore)
 VOICE = web.AppKey("voice", VoiceClient)
 REASONING = web.AppKey("reasoning", ReasoningClient)
 AUDIO = web.AppKey("audio", AudioProcessor)
+PENDING_TURNS = web.AppKey("pending_turns", dict[tuple[str, str], PendingTurn])
 
 _ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
 _ALLOWED_JSON_TURN_KEYS = {"session_id", "turn_id", "input", "response_format"}
@@ -113,6 +128,7 @@ def create_app(
         window_seconds=config.rate_limit_window_seconds,
     )
     app[SEMAPHORE] = asyncio.Semaphore(config.max_concurrent_turns)
+    app[PENDING_TURNS] = {}
     app[VOICE] = voice_client or UpstreamVoiceClient(
         stt_url=config.stt_url,
         tts_url=config.tts_url,
@@ -121,6 +137,21 @@ def create_app(
     )
     if reasoning_client is not None:
         app[REASONING] = reasoning_client
+    elif config.reasoning_backend == "n8n":
+        if config.n8n_api_key_file is None:
+            raise ValueError("Jarvis n8n credential is unavailable")
+        try:
+            n8n_api_key = config.n8n_api_key_file.read_text().strip()
+        except OSError as error:
+            raise ValueError("Jarvis n8n credential is unavailable") from error
+        if not n8n_api_key:
+            raise ValueError("Jarvis n8n credential is empty")
+        app[REASONING] = N8NReasoningClient(
+            webhook_url=config.n8n_webhook_url,
+            api_key=n8n_api_key,
+            timeout_seconds=config.upstream_timeout_seconds,
+            max_response_chars=config.max_response_chars,
+        )
     else:
         reasoning_api_key = ""
         if config.reasoning_api_key_file is not None:
@@ -246,6 +277,17 @@ async def _create_turn(request: web.Request) -> web.Response:
             raise APIError(409, "idempotency_conflict", "Idempotency key was already used.")
         return web.json_response(cached.body, status=cached.status)
 
+    pending_key = (scope, key)
+    pending = request.app[PENDING_TURNS].get(pending_key)
+    if pending is not None:
+        if not hmac.compare_digest(pending.fingerprint, fingerprint):
+            raise APIError(409, "idempotency_conflict", "Idempotency key was already used.")
+        completed = await asyncio.shield(pending.completed)
+        cached = store.get_cached_response(scope, key)
+        if completed and cached is not None:
+            return web.json_response(cached.body, status=cached.status)
+        raise APIError(409, "turn_incomplete", "The authoritative turn did not complete.")
+
     if store.get_turn(parsed.turn_id) is not None:
         raise APIError(409, "turn_exists", "Turn identifier is already in use.")
     if session.active_turn_id is not None:
@@ -264,6 +306,8 @@ async def _create_turn(request: web.Request) -> web.Response:
     )
     session.active_turn_id = turn.turn_id
     store.put_turn(turn)
+    pending = PendingTurn(fingerprint, asyncio.get_running_loop().create_future())
+    request.app[PENDING_TURNS][pending_key] = pending
 
     try:
         async with request.app[SEMAPHORE]:
@@ -271,10 +315,10 @@ async def _create_turn(request: web.Request) -> web.Response:
             if len(transcript) > config.max_text_chars:
                 raise APIError(422, "transcript_too_long", "Recognized speech exceeds the text limit.")
             enforce_safe_intent(transcript)
-            response_text = await request.app[REASONING].process(
-                transcript, session.session_id
+            reasoning_result = await request.app[REASONING].process(
+                transcript, session.session_id, turn.turn_id
             )
-            response_text = response_text.strip()
+            response_text = reasoning_result.spoken_text.strip()
             if not response_text:
                 raise UpstreamError("empty reasoning response")
             if len(response_text) > config.max_response_chars:
@@ -294,6 +338,7 @@ async def _create_turn(request: web.Request) -> web.Response:
             store.put_turn(turn)
             body = _turn_body(turn, parsed.response_format)
             store.cache_response(scope, key, fingerprint, 201, body)
+            pending.completed.set_result(True)
             return web.json_response(body, status=201)
     except asyncio.CancelledError:
         turn.state = "cancelled"
@@ -317,11 +362,28 @@ async def _create_turn(request: web.Request) -> web.Response:
             "Audio could not be accepted.",
             normalization_subtype=subtype,
         ) from error
-    except UpstreamError as error:
+    except UpstreamError:
         turn.state = "failed"
         turn.task = None
-        raise APIError(502, "upstream_unavailable", "A voice or reasoning service is unavailable.") from error
+        body = {
+            "error": {
+                "code": "upstream_unavailable",
+                "message": "A voice or reasoning service is unavailable.",
+                "request_id": request["request_id"],
+            }
+        }
+        store.cache_response(scope, key, fingerprint, 502, body)
+        pending.completed.set_result(True)
+        LOGGER.warning(
+            "request_failed status=502 code=upstream_unavailable request_id=%s",
+            request["request_id"],
+        )
+        return web.json_response(body, status=502)
     finally:
+        if not pending.completed.done():
+            pending.completed.set_result(False)
+        if request.app[PENDING_TURNS].get(pending_key) is pending:
+            request.app[PENDING_TURNS].pop(pending_key, None)
         if session.active_turn_id == turn.turn_id:
             session.active_turn_id = None
 
