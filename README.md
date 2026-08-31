@@ -18,28 +18,28 @@ https://github.com/user-attachments/assets/e9c9649d-99f2-459f-9d77-55a60df1e7fa
 
 ## What happens when I speak?
 
-1. The browser or watch captures one explicitly initiated voice turn.
-2. Audio travels only to the private Jarvis API.
-3. Private speech recognition creates the transcript.
-4. A bounded reasoning workflow calls the configured local model.
-5. Local speech synthesis returns the answer to the browser or watch.
+1. Listening starts only after a deliberate user action: Hold-to-Talk or Open Dialogue in the browser, or **Start Voice** on the watch. Open Dialogue then detects each utterance locally until it is stopped or times out.
+2. The browser sends a recorded turn over same-origin HTTPS. The watch records OPUS and relays bounded chunks through the paired Zepp phone Side Service to the same private `v1` API.
+3. The API verifies the turn, normalizes the audio, and sends it to the operator's private speech-recognition service for transcription.
+4. Policy runs before reasoning. An accepted transcript goes to the selected bounded backend: the authenticated n8n workflow or the supported direct local-model adapter.
+5. The API validates the answer, synthesizes it with Piper, and returns session-scoped text and audio. The browser plays WAV; the phone transfers MP3 back to the watch.
 
 ## Architecture
 
 ![Jarvis architecture showing browser and Active Max clients using a private Jarvis API, Whisper, an authenticated zero-retention n8n workflow, a private local model, and Piper](docs/architecture/jarvis-architecture.svg)
 
-A voice turn follows one controlled path:
+In the featured n8n configuration, a voice turn follows this controlled path:
 
-1. The browser records directly, or the watch records OPUS and transfers it through the paired Zepp phone service.
-2. The client creates a short-lived session and submits the turn through private same-origin HTTPS.
-3. The Jarvis API verifies origin, session ownership, replay key, request schema, payload size, duration, concurrency, rate, and policy.
+1. The browser records WebM/Opus directly. The watch records OPUS and transfers bounded chunks through the paired Zepp phone Side Service.
+2. Each client creates a short-lived session. The browser uses private same-origin HTTPS; the phone Side Service uses its configured private API origin.
+3. The Jarvis API enforces the allowed browser Origin, then verifies session ownership, idempotency key, request schema, payload size, duration, concurrency, rate, and policy.
 4. Audio is normalized and transcribed by the operator's private speech-recognition service.
 5. The API sends only the versioned session ID, turn ID, and transcript to an authenticated n8n webhook.
 6. n8n validates the exact contract, calls the configured private local model, and emits a normalized response with execution retention disabled.
 7. The API independently validates that response, synthesizes speech with Piper, scopes the resulting audio to the owning session, and returns text plus audio.
-8. The browser or watch plays the response and returns to standby.
+8. The browser plays the WAV response directly; the phone Side Service transfers the MP3 response to the watch. Both return to standby after playback.
 
-Both clients share the same server-side policy and media path. The watch has no privileged API, and n8n is not used for realtime audio transport.
+The supported direct backend replaces steps 5–6 with a bounded API-to-model call through a private OpenAI-compatible endpoint. It is mutually exclusive with n8n and has no tool execution. Both clients share the same server-side policy and media path; the watch has no privileged API, and n8n never carries realtime audio.
 
 ## Why I built it
 
@@ -129,11 +129,11 @@ This is a browser-rendered, source-faithful documentation preview. It is not a p
 
 Jarvis is designed for a trusted private network, not anonymous Internet exposure.
 
-- **Local reachability:** no public route, hosted demo, analytics integration, or client credential flow.
+- **Local reachability:** no public route, hosted demo, analytics integration, or public account/per-device credential issuance flow.
 - **Explicit listening:** browser capture requires Hold-to-Talk or deliberate Open Dialogue; watch recording begins only from its on-screen control.
 - **Ephemeral server state:** sessions, transcripts, bounded turn state, and response audio expire; audio normalization uses temporary directories removed after processing.
 - **Zero n8n execution retention:** the supplied workflow disables successful, failed, manual, and progress data retention.
-- **Client isolation:** restrictive Content Security Policy, same-origin API calls, no-referrer behavior, and no third-party scripts or assets.
+- **Client isolation:** the browser uses a restrictive Content Security Policy, same-origin API calls, no-referrer behavior, and no third-party scripts or assets. The watch relays through the paired phone Side Service and has no privileged API.
 - **Request authorization:** short-lived session IDs, session-bound CSRF tokens, idempotency keys, and ownership checks.
 - **Fail-closed contracts:** malformed n8n requests or responses, unknown keys, mismatched IDs, oversized text, and unavailable services reject the turn.
 - **Policy before reasoning:** high-risk physical, security, purchase, and irreversible intents are rejected before the reasoning workflow or synthesizer.
