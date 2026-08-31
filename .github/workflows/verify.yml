@@ -28,7 +28,7 @@ jobs:
       - name: Install audio system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes ffmpeg libopus0
+          sudo apt-get install --yes ffmpeg libopus0 libimage-exiftool-perl tesseract-ocr
 
       - name: Install pinned toolchains and dependencies
         run: |
@@ -57,6 +57,12 @@ jobs:
 
       - name: Scan publication candidate
         run: npm run public-safety
+
+      - name: Scan candidate media
+        env:
+          JARVIS_MEDIA_SAFETY_REQUIRE_OCR: '1'
+          JARVIS_MEDIA_SAFETY_REQUIRE_EXIFTOOL: '1'
+        run: npm run media-safety
 
       - name: Check patch hygiene
         run: git diff --check

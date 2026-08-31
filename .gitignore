@@ -1,10 +1,12 @@
 .DS_Store
 
-# Local configuration and credentials
+# Local configuration, credentials, and release recovery
 .env
 .env.*
 !.env.example
 !watch/.env.local.example
+.public-safety.private.json
+.release-private/
 watch/.env.local
 watch/app-side/api-config.js
 

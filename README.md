@@ -1,70 +1,26 @@
 # Jarvis
 
-**A local-first voice assistant for the browser and Amazfit Active Max, now using a strict n8n reasoning workflow.** Jarvis turns an explicit microphone or text interaction into private speech recognition, bounded local reasoning, and a spoken response—without exposing the experience as a public web service.
+> A private, local-first voice assistant that runs across the browser and a physical Amazfit Active Max.
 
-**Core release:** `0.1.8` · **Watch release:** `0.1.12` · **API contract:** `v1` · **Deployment:** private LAN only
+Speak from the browser or watch. Speech recognition, reasoning, and voice playback stay inside a user-operated private stack.
 
-> [!IMPORTANT]
-> This repository is not a turn-key cloud service or public demo. A working clone requires operator-supplied speech-to-text, text-to-speech, reasoning, HTTPS ingress, and—when using the watch—a paired phone and Amazfit Active Max. No GitHub Pages site, public API, hosted model, or marketplace package is provided.
+**Core release:** `0.1.8` · **Watch release:** `0.1.12` · **API contract:** `v1` · **Deployment:** private trusted LAN only
 
-## Release highlights
+## Portfolio film
 
-- **Terminal-green browser cockpit** with a dimensional mechanical intelligence core, truthful module states, responsive controls, and reduced-motion support.
-- **n8n reasoning orchestration** through one authenticated, typed webhook path: validate turn → call private local model → normalize response.
-- **Zero n8n execution retention** for successful, failed, manual, or in-progress executions in the supplied workflow.
-- **Shared browser/watch API** with origin checks, session ownership, idempotency, cancellation, strict media limits, and ephemeral response audio.
-- **Jarvis Watch `0.1.12`** with the validated terminal-green mechanical presence animation, a static failure-safe render, matching app icon, reusable-recorder lifecycle recovery, bounded STOP-event watchdog, stale-callback fencing, and response-volume restoration.
-- **No tools, Home Assistant, memory service, search, or direct fallback** in the selected n8n path. The current workflow generates concise spoken responses only.
+[▶ Watch the 72-second Jarvis showcase film](docs/showcase/jarvis-showcase.mp4)
 
-## Interface
+*72-second product film. Narration uses an authorized original synthetic voice generated through ElevenLabs; no character voice was cloned.*
 
-### Active Max watch
+![Jarvis browser cockpit showing a synthetic release-check conversation and completed response](docs/screenshots/jarvis-browser-response.png)
 
-| Active Max interface | Watch experience |
-|---|---|
-| ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | **Explicit voice control.** Tap **Start Voice**, speak for up to eight seconds, then tap again or let the recording stop automatically.<br><br>**Private response path.** The recording travels through the paired phone to the user-operated LAN services; response text and MP3 playback return to the watch.<br><br>**Clear lifecycle.** The presence ring and status label distinguish ready, listening, processing, speaking, and error states. |
+## What happens when I speak?
 
-This is a browser-rendered, source-faithful documentation preview. The physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
-
-### Browser
-
-| Ready cockpit | Completed private turn |
-|---|---|
-| ![Terminal-green Jarvis browser cockpit ready for Hold-to-Talk, Open Dialogue, or typed input](docs/screenshots/jarvis-browser-ready.png) | ![Jarvis browser cockpit showing a synthetic release-check conversation and completed response](docs/screenshots/jarvis-browser-response.png) |
-
-The live cockpit prioritizes the mechanical intelligence core while keeping the command surface and conversation state visible. On small screens, primary voice and text controls move ahead of conversation history to minimize scrolling.
-
-## What works today
-
-### Browser
-
-- **Hold-to-Talk** with pointer, <kbd>Space</kbd>, or <kbd>Enter</kbd>; release sends the recording.
-- **Open Dialogue**, explicitly enabled by the user, with local voice-activity detection.
-- **Half-duplex conversation:** capture pauses while a request is processed or Jarvis is speaking.
-- Typed requests, bounded on-screen conversation history, turn cancellation, and response playback.
-- Mechanical canvas visualization for idle, listening, processing, speaking, and error states.
-- Responsive command-first mobile layout and `prefers-reduced-motion` support.
-- Three-minute Open Dialogue silence timeout and 12-second maximum browser utterance.
-
-### Amazfit Active Max
-
-- Zepp OS Device App plus phone Side Service for the round 480 × 480 `genevaw` target.
-- Tap-to-start/tap-to-stop OPUS recording with an eight-second maximum.
-- Bounded, chunked transfer from watch to phone, then relay to the same private `v1` API.
-- MP3 response transfer, on-watch playback, response text, and low-power state animation.
-- Response-only volume attenuation to 85% of the current watch volume, followed by restoration.
-- Reusable recorder with recovery when `stop()` throws or Zepp omits/delays its STOP event.
-- Microphone-only app permission in the current manifest.
-
-### Voice pipeline and n8n
-
-- Browser WebM/Opus, watch OPUS, and WAV input normalized to mono 16 kHz WAV.
-- Whisper-compatible private speech recognition and Piper synthesis with `en_US-danny-low`.
-- Authenticated API-to-n8n transport with exact request keys, bounded identifiers, idempotency, and response-size limits.
-- A four-node n8n workflow: authenticated webhook, strict turn validation, private model call, and typed response normalization.
-- Exact response-envelope validation at the Jarvis API before speech synthesis.
-- WAV output for browsers and MP3 output for the watch.
-- Sanitized workflow artifact at [`n8n/Jarvis Watch & Web.workflow.json`](n8n/Jarvis%20Watch%20%26%20Web.workflow.json).
+1. The browser or watch captures one explicitly initiated voice turn.
+2. Audio travels only to the private Jarvis API.
+3. Private speech recognition creates the transcript.
+4. A bounded reasoning workflow calls the configured local model.
+5. Local speech synthesis returns the answer to the browser or watch.
 
 ## Architecture
 
@@ -83,6 +39,90 @@ A voice turn follows one controlled path:
 
 Both clients share the same server-side policy and media path. The watch has no privileged API, and n8n is not used for realtime audio transport.
 
+## Why I built it
+
+Jarvis explores one practical question:
+
+> Can a useful personal voice assistant span browser and wearable interfaces while keeping speech, reasoning, and response generation under local, private control?
+
+The goal was not to imitate a cloud assistant or expand into an unrestricted agent. It was to make one carefully bounded voice path useful enough to run from a browser and wear on a real device—while keeping listening explicit, state ephemeral, contracts inspectable, and private services private.
+
+## What this demonstrates
+
+- Local-first AI architecture
+- Browser and wearable interface design
+- Explicit microphone activation and bounded voice turns
+- Shared, versioned API contracts
+- Authenticated n8n orchestration with zero execution retention
+- Private local-model integration
+- Local speech recognition and synthesis
+- Fail-closed security and policy boundaries
+- Physical-device build, installation, and testing discipline
+
+> [!IMPORTANT]
+> Jarvis is not a turn-key cloud service or public demo. A working clone requires operator-supplied STT, TTS, reasoning, HTTPS ingress, and—when using the watch—a paired phone and Amazfit Active Max. No GitHub Pages site, public API, hosted model, or marketplace package is provided.
+
+## Interface evidence
+
+### Browser cockpit
+
+![Terminal-green Jarvis browser cockpit ready for Hold-to-Talk, Open Dialogue, or typed input](docs/screenshots/jarvis-browser-ready.png)
+
+The browser supports Hold-to-Talk, deliberate Open Dialogue, and typed requests. The mechanical core visualizes idle, listening, processing, speaking, and error states; reduced-motion and responsive layouts are included.
+
+### Active Max watch
+
+| Active Max interface | Watch experience |
+|---|---|
+| ![Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn](docs/screenshots/jarvis-watch-ready.png) | **Explicit voice control.** Tap **Start Voice**, speak for up to eight seconds, then tap again or let recording stop automatically.<br><br>**Private response path.** Audio travels through the paired phone to the user-operated private stack; response text and MP3 playback return to the watch.<br><br>**Clear lifecycle.** The ring and status label distinguish ready, listening, processing, speaking, and error states. |
+
+This is a browser-rendered, source-faithful documentation preview. It is not a photograph of the device. The physical Active Max remains authoritative for Zepp rendering, microphone, speaker/volume, and performance.
+
+## Release details
+
+- **Terminal-green browser cockpit** with a dimensional mechanical intelligence core, truthful module states, responsive controls, and reduced-motion support.
+- **n8n reasoning orchestration** through one authenticated, typed webhook path: validate turn → call private local model → normalize response.
+- **Zero n8n execution retention** for successful, failed, manual, or in-progress executions in the supplied workflow.
+- **Shared browser/watch API** with origin checks, session ownership, idempotency, cancellation, strict media limits, and ephemeral response audio.
+- **Jarvis Watch `0.1.12`** with the validated terminal-green mechanical presence animation, static failure-safe render, matching app icon, reusable-recorder recovery, bounded STOP-event watchdog, stale-callback fencing, and response-volume restoration.
+- **Bounded reasoning scope:** no tools, Home Assistant, memory service, search, or direct fallback in the selected n8n path. The current workflow generates concise spoken responses only.
+
+## Engineering details
+
+### Browser
+
+- Hold-to-Talk with pointer, <kbd>Space</kbd>, or <kbd>Enter</kbd>; release sends the recording.
+- Open Dialogue, explicitly enabled by the user, with local voice-activity detection.
+- Half-duplex conversation: capture pauses while a request is processed or Jarvis is speaking.
+- Typed requests, bounded on-screen conversation history, turn cancellation, and response playback.
+- Three-minute Open Dialogue silence timeout and 12-second maximum browser utterance.
+
+### Amazfit Active Max
+
+- Zepp OS Device App plus phone Side Service for the round 480 × 480 `genevaw` target.
+- Tap-to-start/tap-to-stop OPUS recording with an eight-second maximum.
+- Bounded, chunked transfer from watch to phone, then relay to the same private `v1` API.
+- MP3 response transfer, on-watch playback, response text, and low-power state animation.
+- Response-only volume attenuation to 85% of current watch volume, followed by restoration.
+- Reusable recorder with recovery when `stop()` throws or Zepp omits or delays its STOP event.
+- Microphone-only app permission in the current manifest.
+
+### API and media contracts
+
+- Browser WebM/Opus, watch OPUS, and WAV input normalize to mono 16 kHz WAV.
+- The same `v1` API owns browser and watch sessions, request validation, media bounds, policy, cancellation, and response ownership.
+- Whisper-compatible private speech recognition and Piper synthesis with `en_US-danny-low`.
+- WAV output for browsers and MP3 output for the watch.
+- The executable contract is documented in [`docs/openapi.yaml`](docs/openapi.yaml).
+
+### n8n reasoning contract
+
+- Authenticated API-to-n8n transport with exact request keys, bounded identifiers, idempotency, and response-size limits.
+- Four nodes: authenticated webhook, strict turn validation, private model call, and typed response normalization.
+- Exact response-envelope validation at the Jarvis API before speech synthesis.
+- Sanitized workflow artifact: [`n8n/Jarvis Watch & Web.workflow.json`](n8n/Jarvis%20Watch%20%26%20Web.workflow.json).
+- Versioned schemas: [`request.schema.json`](contracts/n8n/v1/request.schema.json) and [`response.schema.json`](contracts/n8n/v1/response.schema.json).
+
 ## Privacy and security model
 
 Jarvis is designed for a trusted private network, not anonymous Internet exposure.
@@ -95,11 +135,11 @@ Jarvis is designed for a trusted private network, not anonymous Internet exposur
 - **Request authorization:** short-lived session IDs, session-bound CSRF tokens, idempotency keys, and ownership checks.
 - **Fail-closed contracts:** malformed n8n requests or responses, unknown keys, mismatched IDs, oversized text, and unavailable services reject the turn.
 - **Policy before reasoning:** high-risk physical, security, purchase, and irreversible intents are rejected before the reasoning workflow or synthesizer.
-- **Credential boundary:** n8n and model credentials are server-side file mounts or n8n credentials; they are not shipped in browser/watch bundles or the sanitized workflow.
+- **Credential boundary:** n8n and model credentials remain in server-side file mounts or n8n credentials; they are not shipped in browser/watch bundles or the sanitized workflow.
 - **Hardened containers:** non-root users, read-only filesystems, dropped capabilities, no-new-privileges, bounded temporary storage, and no published host ports.
 - **Safe errors:** routine client errors and logs omit upstream bodies, credentials, transcripts, audio, and local filesystem details.
 
-These controls do **not** make the current build safe for direct Internet exposure. Account authentication, device credential issuance/revocation, and a public-ingress security review remain separate future gates.
+These controls do **not** make the current build safe for direct Internet exposure. Account authentication, device credential issuance and revocation, and a public-ingress security review remain separate future gates. See [SECURITY.md](SECURITY.md) for the supported deployment and private reporting path.
 
 ## Prerequisites
 
@@ -175,6 +215,7 @@ npm test
 npm run test:api
 npm run validate:publication
 npm run public-safety
+npm run media-safety
 docker compose config
 ```
 
@@ -190,7 +231,7 @@ Build the Active Max package after installing and authenticating Zeus CLI:
 npm run build:watch
 ```
 
-The test suites exercise JavaScript contracts, Python API behavior, real media conversion/decoding when system dependencies are available, n8n adapter and workflow schemas, publication links/assets, and secret-safe release boundaries.
+The suites exercise JavaScript contracts, Python API behavior, real media conversion/decoding, n8n adapter and workflow schemas, publication links/assets, secret-safe text boundaries, and media-release safety. Automated media scanning is defense in depth, not a substitute for the [human visual-release checklist](docs/PUBLIC_MEDIA_CHECKLIST.md).
 
 ## Install on Amazfit Active Max
 
@@ -208,7 +249,7 @@ Preview QR codes are temporary credentials. Do not publish or commit them. A suc
 ## Current limitations
 
 - No public web demo, API, GitHub Pages deployment, or marketplace package.
-- A clone cannot answer until the operator supplies and secures STT, reasoning, n8n (when selected), and TTS services.
+- A clone cannot answer until the operator supplies and secures STT, reasoning, n8n when selected, and TTS services.
 - The watch Side Service needs an operator-specific private API origin at build time.
 - Open Dialogue is explicit, browser-only, half-duplex, and energy-threshold based—not wake-word listening or full-duplex streaming.
 - Watch capture begins from the on-screen button; physical-button activation is not implemented.
@@ -216,6 +257,7 @@ Preview QR codes are temporary credentials. Do not publish or commit them. A suc
 - Sessions and conversation state are process-local and ephemeral; restarting the API clears them.
 - The local build does not issue or revoke per-device credentials and must not be exposed directly to the Internet.
 - Browser, automated contract, package, and physical-device checks are distinct evidence levels; the physical Active Max remains authoritative.
+- No physical-device photo or recorded real-turn video is included in this release; the watch image above is explicitly browser-rendered documentation evidence.
 
 ## Project structure
 
@@ -226,23 +268,28 @@ Preview QR codes are temporary credentials. Do not publish or commit them. A suc
 ├── docs/
 │   ├── architecture/    current n8n-based release diagram
 │   ├── screenshots/     browser and watch documentation states
+│   ├── showcase/        portfolio-film contract and release media
 │   ├── watch-preview/   deterministic source-faithful watch renderer
 │   └── openapi.yaml     shared v1 client contract
 ├── n8n/                 sanitized zero-retention reasoning workflow
-├── tests/js/            browser, watch, protocol, metadata, and container tests
+├── tests/js/            browser, watch, protocol, metadata, container, and safety tests
 ├── watch/               Zepp OS Device App, phone Side Service, and manifest
 ├── web/                 responsive browser cockpit and hardened web container
 ├── compose.yaml         private, non-published container deployment
 └── ROADMAP.md           current baseline and planned work
 ```
 
+## Name and affiliation
+
+Jarvis is an independent, unofficial personal engineering project. It is not affiliated with or endorsed by Marvel Entertainment, The Walt Disney Company, or related rights holders. The repository includes no Marvel or Disney artwork, logos, copied interface assets, quotes, sounds, or cloned character voices.
+
 ## Contributing
 
 Changes should preserve the shared API boundary and keep product claims tied to executable or physical-device evidence.
 
-- Add or update tests with behavior changes; run JavaScript, Python, publication, and public-safety gates.
+- Add or update tests with behavior changes; run JavaScript, Python, publication, public-safety, and media-safety gates.
 - Keep watch version, package metadata, preview footer, screenshot, and assertions synchronized.
-- Never commit credentials, private network coordinates, preview QR/session URLs, audio, or transcripts.
+- Never commit credentials, private network coordinates, preview QR/session URLs, audio, transcripts, or recorded private turns.
 - Keep n8n requests and responses versioned, exact, bounded, authenticated, and independently validated by the API.
 - Treat browser verification, documentation preview, package build, and physical-watch acceptance as distinct evidence levels.
 - Update [ROADMAP.md](ROADMAP.md) when work moves between planned, in progress, and verified.
