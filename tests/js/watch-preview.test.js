@@ -49,14 +49,16 @@ test('watch preview screenshot keeps a stable path, signature, and 1280x900 dime
   }
 })
 
-test('README presents one watch preview with explanatory text before the browser screens', async () => {
+test('README leads with response evidence and then labels one watch documentation preview', async () => {
   const readme = await readFile('README.md', 'utf8')
-  const interfaceSection = readme.slice(readme.indexOf('## Interface'), readme.indexOf('## What works today'))
+  const portfolioSection = readme.slice(readme.indexOf('## Portfolio film'), readme.indexOf('## What happens when I speak?'))
+  const interfaceSection = readme.slice(readme.indexOf('## Interface evidence'), readme.indexOf('## Release details'))
   const watchHeading = interfaceSection.indexOf('### Active Max watch')
-  const browserHeading = interfaceSection.indexOf('### Browser')
+  const browserHeading = interfaceSection.indexOf('### Browser cockpit')
 
   assert.ok(watchHeading >= 0, 'Interface must include the watch subsection')
-  assert.ok(browserHeading > watchHeading, 'watch subsection must precede browser subsection')
+  assert.ok(browserHeading >= 0, 'Interface must include the browser subsection')
+  assert.ok(watchHeading > browserHeading, 'browser evidence must precede the labeled watch preview')
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-watch-ready\.png/)
   assert.doesNotMatch(interfaceSection, /docs\/screenshots\/jarvis-watch-response\.png/)
   assert.match(interfaceSection, /Round Active Max source-faithful preview showing Jarvis ready for an explicit voice turn/)
@@ -65,7 +67,7 @@ test('README presents one watch preview with explanatory text before the browser
   assert.match(interfaceSection, /Clear lifecycle/)
   assert.match(interfaceSection, /browser-rendered, source-faithful documentation preview/i)
   assert.match(interfaceSection, /physical Active Max remains authoritative/i)
+  assert.match(portfolioSection, /docs\/screenshots\/jarvis-browser-response\.png/)
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-browser-ready\.png/)
-  assert.match(interfaceSection, /docs\/screenshots\/jarvis-browser-response\.png/)
   assert.doesNotMatch(interfaceSection, /live demo|GitHub Pages/i)
 })
