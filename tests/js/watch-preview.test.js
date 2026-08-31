@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+const GIF_SIGNATURE = Buffer.from('GIF89a', 'ascii')
+const SPEAKING_HERO = 'docs/showcase/jarvis-speaking-preview.gif'
 const SCREENSHOTS = [
   'docs/screenshots/jarvis-watch-ready.png',
 ]
@@ -49,13 +51,22 @@ test('watch preview screenshot keeps a stable path, signature, and 1280x900 dime
   }
 })
 
-test('README leads with response evidence and then labels one watch documentation preview', async () => {
+test('README leads with a tested speaking hero and then labels one watch documentation preview', async () => {
   const readme = await readFile('README.md', 'utf8')
-  const portfolioSection = readme.slice(readme.indexOf('## Portfolio film'), readme.indexOf('## What happens when I speak?'))
+  const speakingHero = await readFile(SPEAKING_HERO)
+  const heroIndex = readme.indexOf(SPEAKING_HERO)
+  const filmIndex = readme.indexOf('## Portfolio film')
+  const portfolioSection = readme.slice(filmIndex, readme.indexOf('## What happens when I speak?'))
   const interfaceSection = readme.slice(readme.indexOf('## Interface evidence'), readme.indexOf('## Release details'))
   const watchHeading = interfaceSection.indexOf('### Active Max watch')
   const browserHeading = interfaceSection.indexOf('### Browser cockpit')
 
+  assert.ok(heroIndex >= 0, 'README must include the speaking hero')
+  assert.ok(heroIndex < filmIndex, 'speaking hero must be the first visual before the film')
+  assert.ok(speakingHero.subarray(0, 6).equals(GIF_SIGNATURE), 'speaking hero must use the GIF89a signature')
+  assert.deepEqual({ width: speakingHero.readUInt16LE(6), height: speakingHero.readUInt16LE(8) }, { width: 900, height: 506 })
+  assert.ok(speakingHero.byteLength > 500_000, 'speaking hero must contain real animation frames')
+  assert.ok(speakingHero.byteLength < 5 * 1024 * 1024, 'speaking hero must remain publication-sized')
   assert.ok(watchHeading >= 0, 'Interface must include the watch subsection')
   assert.ok(browserHeading >= 0, 'Interface must include the browser subsection')
   assert.ok(watchHeading > browserHeading, 'browser evidence must precede the labeled watch preview')
@@ -67,7 +78,7 @@ test('README leads with response evidence and then labels one watch documentatio
   assert.match(interfaceSection, /Clear lifecycle/)
   assert.match(interfaceSection, /browser-rendered, source-faithful documentation preview/i)
   assert.match(interfaceSection, /physical Active Max remains authoritative/i)
-  assert.match(portfolioSection, /docs\/screenshots\/jarvis-browser-response\.png/)
+  assert.doesNotMatch(portfolioSection, /docs\/screenshots\/jarvis-browser-response\.png/)
   assert.match(interfaceSection, /docs\/screenshots\/jarvis-browser-ready\.png/)
   assert.doesNotMatch(interfaceSection, /live demo|GitHub Pages/i)
 })

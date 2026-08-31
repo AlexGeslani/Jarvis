@@ -6,6 +6,14 @@ Speak from the browser or watch. Speech recognition, reasoning, and voice playba
 
 **Core release:** `0.1.8` · **Watch release:** `0.1.12` · **API contract:** `v1` · **Deployment:** private trusted LAN only
 
+<p align="center">
+  <img src="docs/showcase/jarvis-speaking-preview.gif" width="900" alt="Jarvis browser cockpit actively responding to a sanitized synthetic turn while its mechanical intelligence core animates with the voice playback">
+</p>
+
+<p align="center">
+  <sub>Actual browser response-state animation captured through the normal session, turn, and audio-playback path using a sanitized synthetic fixture.</sub>
+</p>
+
 ## Portfolio film
 
 **▶ Watch the 72-second Jarvis showcase film**
@@ -13,8 +21,6 @@ Speak from the browser or watch. Speech recognition, reasoning, and voice playba
 https://github.com/user-attachments/assets/e9c9649d-99f2-459f-9d77-55a60df1e7fa
 
 *72-second product film. Narration uses an authorized original synthetic voice generated through ElevenLabs; no character voice was cloned.*
-
-![Jarvis browser cockpit showing a synthetic release-check conversation and completed response](docs/screenshots/jarvis-browser-response.png)
 
 ## What happens when I speak?
 
