@@ -8,7 +8,9 @@ Speak from the browser or watch. Speech recognition, reasoning, and voice playba
 
 ## Portfolio film
 
-[▶ Watch the 72-second Jarvis showcase film](docs/showcase/jarvis-showcase.mp4)
+**▶ Watch the 72-second Jarvis showcase film**
+
+https://github.com/user-attachments/assets/e9c9649d-99f2-459f-9d77-55a60df1e7fa
 
 *72-second product film. Narration uses an authorized original synthetic voice generated through ElevenLabs; no character voice was cloned.*
 
