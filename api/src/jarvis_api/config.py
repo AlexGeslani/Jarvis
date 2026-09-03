@@ -182,6 +182,8 @@ def _absolute_url(
             "localhost",
             "host.docker.internal",
             "host.internal",
+            "voice-api-dev",
+            "voice-api-prod",
         }
         or _private_lan_host(host)
     ):
