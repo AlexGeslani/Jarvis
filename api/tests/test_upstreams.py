@@ -10,11 +10,15 @@ async def test_voice_client_uses_raw_wav_and_the_pinned_piper_selector():
     observed = {}
 
     async def transcribe(request):
+        observed["stt_auth"] = request.headers.get("Authorization")
+        observed["stt_profile"] = request.headers.get("X-Voice-Profile")
         observed["stt_content_type"] = request.content_type
         observed["stt_body"] = await request.read()
         return web.json_response({"text": "Jarvis link check."})
 
     async def synthesize(request):
+        observed["tts_auth"] = request.headers.get("Authorization")
+        observed["tts_profile"] = request.headers.get("X-Voice-Profile")
         observed["tts_json"] = await request.json()
         return web.Response(body=b"RIFF-wave", content_type="audio/wav")
 
@@ -28,12 +32,18 @@ async def test_voice_client_uses_raw_wav_and_the_pinned_piper_selector():
         tts_url=str(server.make_url("/tts")),
         timeout_seconds=2,
         max_audio_bytes=4096,
+        api_key="opaque-voice-key",
+        profile="jarvis-dev",
     )
     try:
         assert await client.transcribe(b"RIFF-input") == "Jarvis link check."
         assert await client.synthesize("Ready.", "piper:en_US-danny-low") == b"RIFF-wave"
         assert observed["stt_content_type"] == "audio/wav"
         assert observed["stt_body"] == b"RIFF-input"
+        assert observed["stt_auth"] == "Bearer opaque-voice-key"
+        assert observed["stt_profile"] == "jarvis-dev"
+        assert observed["tts_auth"] == "Bearer opaque-voice-key"
+        assert observed["tts_profile"] == "jarvis-dev"
         assert observed["tts_json"]["voice"] == "piper:en_US-danny-low"
     finally:
         await client.close()
