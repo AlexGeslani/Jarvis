@@ -14,6 +14,44 @@ def _set_common(monkeypatch):
         monkeypatch.setenv(key, value)
 
 
+def test_voice_profile_requires_a_secret_file(monkeypatch, tmp_path):
+    _set_common(monkeypatch)
+    monkeypatch.setenv("JARVIS_VOICE_PROFILE", "jarvis-dev")
+    monkeypatch.setenv("JARVIS_VOICE_API_KEY_FILE", str(tmp_path / "missing"))
+    monkeypatch.setenv("JARVIS_REASONING_URL", "http://host.docker.internal:8082/v1")
+    monkeypatch.setenv("JARVIS_REASONING_MODEL", "example-model")
+
+    with pytest.raises(ValueError, match="credential is unavailable"):
+        Config.from_env()
+
+
+def test_voice_profile_accepts_a_mounted_secret(monkeypatch, tmp_path):
+    _set_common(monkeypatch)
+    credential = tmp_path / "voice-key"
+    credential.write_text("opaque-test-key")
+    monkeypatch.setenv("JARVIS_VOICE_PROFILE", "jarvis-dev")
+    monkeypatch.setenv("JARVIS_VOICE_API_KEY_FILE", str(credential))
+    monkeypatch.setenv("JARVIS_REASONING_URL", "http://host.docker.internal:8082/v1")
+    monkeypatch.setenv("JARVIS_REASONING_MODEL", "example-model")
+
+    config = Config.from_env()
+    assert config.voice_profile == "jarvis-dev"
+    assert config.voice_api_key_file == credential
+
+
+def test_voice_api_compose_name_is_allowed_but_arbitrary_http_is_rejected(monkeypatch):
+    _set_common(monkeypatch)
+    monkeypatch.setenv("JARVIS_STT_URL", "http://voice-api-dev:8080/v1/audio/transcriptions")
+    monkeypatch.setenv("JARVIS_TTS_URL", "http://voice-api-dev:8080/v1/audio/speech")
+    monkeypatch.setenv("JARVIS_REASONING_URL", "http://host.docker.internal:8082/v1")
+    monkeypatch.setenv("JARVIS_REASONING_MODEL", "example-model")
+    Config.from_env()
+
+    monkeypatch.setenv("JARVIS_STT_URL", "http://unapproved-service:8080/v1/audio/transcriptions")
+    with pytest.raises(ValueError, match="local host bridge"):
+        Config.from_env()
+
+
 def test_local_reasoning_backend_uses_portable_configuration(monkeypatch):
     _set_common(monkeypatch)
     monkeypatch.setenv("JARVIS_REASONING_URL", "http://host.docker.internal:8082/v1")

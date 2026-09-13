@@ -19,6 +19,8 @@ class Config:
     allowed_origin: str = "https://jarvis.example"
     stt_url: str = ""
     tts_url: str = ""
+    voice_api_key_file: Path | None = None
+    voice_profile: str = ""
     reasoning_backend: str = "direct"
     reasoning_url: str = ""
     reasoning_model: str = ""
@@ -50,6 +52,8 @@ class Config:
             allowed_origin=os.getenv("JARVIS_ALLOWED_ORIGIN", cls.allowed_origin),
             stt_url=os.getenv("JARVIS_STT_URL", ""),
             tts_url=os.getenv("JARVIS_TTS_URL", ""),
+            voice_api_key_file=_optional_path("JARVIS_VOICE_API_KEY_FILE"),
+            voice_profile=os.getenv("JARVIS_VOICE_PROFILE", "").strip(),
             reasoning_backend=os.getenv("JARVIS_REASONING_BACKEND", "direct").strip(),
             reasoning_url=os.getenv("JARVIS_REASONING_URL", ""),
             reasoning_model=os.getenv("JARVIS_REASONING_MODEL", ""),
@@ -82,6 +86,12 @@ class Config:
         _absolute_url("JARVIS_ALLOWED_ORIGIN", self.allowed_origin, require_https=True)
         _absolute_url("JARVIS_STT_URL", self.stt_url, allow_host_bridge=True)
         _absolute_url("JARVIS_TTS_URL", self.tts_url, allow_host_bridge=True)
+        if self.voice_profile:
+            if self.voice_profile not in {"jarvis-dev", "jarvis"}:
+                raise ValueError("JARVIS_VOICE_PROFILE must be jarvis-dev or jarvis")
+            _validate_required_credential("JARVIS_VOICE_API_KEY_FILE", self.voice_api_key_file)
+        elif self.voice_api_key_file is not None:
+            raise ValueError("JARVIS_VOICE_PROFILE is required with JARVIS_VOICE_API_KEY_FILE")
         if self.reasoning_backend not in {"direct", "n8n"}:
             raise ValueError("JARVIS_REASONING_BACKEND must be direct or n8n")
         if self.reasoning_backend == "direct":
@@ -172,6 +182,8 @@ def _absolute_url(
             "localhost",
             "host.docker.internal",
             "host.internal",
+            "voice-api-dev",
+            "voice-api-prod",
         }
         or _private_lan_host(host)
     ):

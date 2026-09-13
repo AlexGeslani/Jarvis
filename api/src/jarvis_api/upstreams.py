@@ -35,11 +35,18 @@ class VoiceClient:
         tts_url: str,
         timeout_seconds: float,
         max_audio_bytes: int,
+        api_key: str = "",
+        profile: str = "",
         session: aiohttp.ClientSession | None = None,
     ) -> None:
         self.stt_url = stt_url
         self.tts_url = tts_url
         self.max_audio_bytes = max_audio_bytes
+        self.headers = (
+            {"Authorization": f"Bearer {api_key}", "X-Voice-Profile": profile}
+            if api_key and profile
+            else {}
+        )
         self._owns_session = session is None
         self.session = session
         self.timeout = aiohttp.ClientTimeout(total=timeout_seconds)
@@ -54,7 +61,7 @@ class VoiceClient:
             async with self._session().post(
                 self.stt_url,
                 data=wav_audio,
-                headers={"Content-Type": "audio/wav"},
+                headers={**self.headers, "Content-Type": "audio/wav"},
             ) as response:
                 if response.status < 200 or response.status >= 300:
                     raise UpstreamError("speech recognition unavailable")
@@ -70,6 +77,7 @@ class VoiceClient:
         try:
             async with self._session().post(
                 self.tts_url,
+                headers=self.headers,
                 json={"text": text, "voice": voice, "format": "wav"},
             ) as response:
                 if response.status < 200 or response.status >= 300:

@@ -129,12 +129,22 @@ def create_app(
     )
     app[SEMAPHORE] = asyncio.Semaphore(config.max_concurrent_turns)
     app[PENDING_TURNS] = {}
-    app[VOICE] = voice_client or UpstreamVoiceClient(
-        stt_url=config.stt_url,
-        tts_url=config.tts_url,
-        timeout_seconds=config.upstream_timeout_seconds,
-        max_audio_bytes=config.max_audio_bytes,
-    )
+    if voice_client is not None:
+        app[VOICE] = voice_client
+    else:
+        voice_api_key = ""
+        if config.voice_api_key_file is not None:
+            voice_api_key = config.voice_api_key_file.read_text().strip()
+            if not voice_api_key:
+                raise ValueError("Jarvis Voice API credential is unavailable")
+        app[VOICE] = UpstreamVoiceClient(
+            stt_url=config.stt_url,
+            tts_url=config.tts_url,
+            timeout_seconds=config.upstream_timeout_seconds,
+            max_audio_bytes=config.max_audio_bytes,
+            api_key=voice_api_key,
+            profile=config.voice_profile,
+        )
     if reasoning_client is not None:
         app[REASONING] = reasoning_client
     elif config.reasoning_backend == "n8n":
